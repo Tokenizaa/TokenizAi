@@ -78,6 +78,7 @@ interface AppShellProps {
   onSelectModule: (id: ModuleId) => void;
   onChangeRole: (role: UserRole) => void;
   onOpenCommandPalette: () => void;
+  onOpenChatbot: () => void;
   onPrimaryAction: () => void;
   isDark: boolean;
   onToggleTheme: () => void;
@@ -97,6 +98,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   onSelectModule,
   onChangeRole,
   onOpenCommandPalette,
+  onOpenChatbot,
   onPrimaryAction,
   isDark,
   onToggleTheme,
@@ -272,6 +274,16 @@ export const AppShell: React.FC<AppShellProps> = ({
               <kbd className="hidden sm:inline font-mono text-[10px] px-1 py-0.5 rounded bg-surface-subtle border border-line">
                 ⌘K
               </kbd>
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenChatbot}
+              aria-label="Abrir Chatbot Gemini"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line bg-canvas text-xs font-medium text-ink hover:border-accent transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <Bot className="w-3.5 h-3.5 text-accent" />
+              <span className="hidden sm:inline">Chatbot Gemini</span>
             </button>
 
             {(!isOnline || pendingSyncCount > 0) && (

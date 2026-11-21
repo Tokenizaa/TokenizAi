@@ -474,24 +474,41 @@ async function startServer() {
     const department = db.departments.find((d) => d.id === (position?.departmentId ?? agentInst.departmentId));
     const project = db.projects.find((p) => p.id === (conv.projectId ?? agentInst.projectId));
 
-    const recentHistory = db.messages
-      .filter((m) => m.conversationId === conv.id)
-      .slice(-8)
-      .map((m) => `${m.senderName} (${m.senderRole}): ${m.content}`)
-      .join('\n');
+    const previousMessages = db.messages
+      .filter((m) => m.conversationId === conv.id && m.id !== userMsg.id)
+      .slice(-12);
+
+    const chatHistory: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+    for (const m of previousMessages) {
+      const turnRole: 'user' | 'model' = m.senderKind === 'agente_operacional' ? 'model' : 'user';
+      const formattedText =
+        turnRole === 'user' ? `[${m.senderName} · ${m.senderRole}]: ${m.content}` : m.content;
+      const last = chatHistory[chatHistory.length - 1];
+      if (last && last.role === turnRole) {
+        last.parts[0].text += `\n${formattedText}`;
+      } else if (chatHistory.length > 0 || turnRole === 'user') {
+        chatHistory.push({ role: turnRole, parts: [{ text: formattedText }] });
+      }
+    }
+
+    const resolvedModel = agentInst.model || 'gemini-4-hydrogen';
 
     try {
-      const response = await generateWithRetry(ai, {
-        model: agentInst.model || 'gemini-4-hydrogen',
-        contents: `Histórico recente da conversa:\n${recentHistory}\n\nResponda à última mensagem considerando suas responsabilidades, limitações e contexto do projeto.`,
+      const chat = ai.chats.create({
+        model: resolvedModel,
+        history: chatHistory,
         config: {
           systemInstruction: buildAgentSystemInstruction(agentInst, position, department, project),
         },
       });
+      const response = await chat.sendMessage({
+        message: userMsg.content,
+      });
 
       const replyText = (response.text ?? '').trim() || 'Solicitação processada sem conteúdo retornado.';
       const finishedAt = new Date().toISOString();
-      const tokensEst = Math.max(350, Math.round((recentHistory.length + replyText.length) / 3.5));
+      const historyChars = chatHistory.reduce((acc, item) => acc + item.parts[0].text.length, 0);
+      const tokensEst = Math.max(350, Math.round((historyChars + userMsg.content.length + replyText.length) / 3.5));
       const costBRL = Number(((tokensEst / 1000) * 0.45).toFixed(2));
 
       agentInst.spentBudgetBRL = Number((agentInst.spentBudgetBRL + costBRL).toFixed(2));
@@ -1528,6 +1545,139 @@ Comando do usuário: "${transcript.trim()}"`,
       res.status(502).json({
         error: err instanceof Error ? err.message : 'Falha na interpretação de voz.',
       });
+    }
+  });
+
+  app.post('/api/ai/chatbot', async (req, res) => {
+    const role = getCallerRole(req);
+    const {
+      message,
+      history = [],
+      personaId = 'executive_advisor',
+      customSystemInstruction,
+      speedMode = 'balanced',
+      activeModule = 'executive',
+    } = req.body as {
+      message?: string;
+      history?: Array<{ role: 'user' | 'model'; text: string }>;
+      personaId?: string;
+      customSystemInstruction?: string;
+      speedMode?: 'balanced' | 'fast';
+      activeModule?: string;
+    };
+
+    const cleanMessage = message?.trim();
+    if (!cleanMessage) {
+      res.status(400).json({ error: 'A mensagem do chatbot não pode estar vazia.' });
+      return;
+    }
+
+    const ai = getGeminiClient();
+    if (!ai) {
+      res.status(503).json({
+        error: 'GEMINI_API_KEY não configurada no servidor para executar o chatbot Gemini.',
+      });
+      return;
+    }
+
+    const model = speedMode === 'fast' ? 'gemini-3.1-flash-lite' : 'gemini-4-hydrogen';
+
+    const rolePrompts: Record<string, string> = {
+      executive_advisor:
+        'Você é o Conselheiro Executivo da NettosCorp Enterprise (TokenizAi). Atue com visão estratégica C-Level: sintetize riscos de portfólio, priorize entregas, identifique gargalos entre setores e apoie decisões DEC/CNS com clareza objetiva.',
+      finance_controller:
+        'Você é o Controller & Especialista FP&A da NettosCorp Enterprise. Analise receitas, despesas, margens, centros de custo, orçamento de agentes de IA e impacto financeiro de projetos com rigor numérico em BRL.',
+      tech_architect:
+        'Você é o Arquiteto Principal de Software & Inteligência Artificial da NettosCorp. Recomende arquiteturas modulares, pipelines RAG/agentes, boas práticas de segurança AppSec e composições com o acervo de 283 Agency Agents.',
+      operations_lead:
+        'Você é o Líder de Operações & Entregas da NettosCorp. Ajude a destravar tarefas atrasadas, organizar gates NEXUS, distribuir carga entre humanos e agentes Paperclip e definir critérios objetivos de conclusão.',
+      custom:
+        customSystemInstruction?.trim() ||
+        'Você é um assistente corporativo versátil da NettosCorp Enterprise. Responda em Português (Brasil) de forma clara, estruturada e acionável.',
+    };
+
+    const baseRoleInstruction =
+      (customSystemInstruction?.trim() && personaId === 'custom'
+        ? customSystemInstruction.trim()
+        : rolePrompts[personaId] ?? rolePrompts.executive_advisor) +
+      (customSystemInstruction?.trim() && personaId !== 'custom'
+        ? `\n\nDiretriz adicional do usuário:\n${customSystemInstruction.trim()}`
+        : '');
+
+    const totalRevenue = db.financialEntries
+      .filter((f) => f.type === 'receita')
+      .reduce((acc, f) => acc + f.amount, 0);
+    const totalExpenses = db.financialEntries
+      .filter((f) => f.type === 'despesa')
+      .reduce((acc, f) => acc + f.amount, 0);
+    const pendingGov = db.governance.filter((g) => g.status === 'pendente').length;
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const blockedOrOverdueTasks = db.tasks.filter(
+      (t) =>
+        t.status === 'bloqueada' ||
+        (t.dueDate < todayIso && t.status !== 'concluida' && t.status !== 'cancelada')
+    ).length;
+
+    const enterpriseContext = [
+      `Contexto atual da empresa NettosCorp Enterprise:`,
+      `- Perfil RBAC do usuário conectado: ${ROLE_DEFINITIONS[role].label} (${AUTHORITY_LABELS[ROLE_DEFINITIONS[role].authorityLevel]}).`,
+      `- Módulo em foco na interface: ${activeModule}.`,
+      `- Portfólio ativo: ${db.projects.length} projetos (${db.projects.map((p) => `${p.code} ${p.name} [${p.status}, ${p.progress}%]`).slice(0, 5).join('; ')}).`,
+      `- Força de agentes operacionais: ${db.operationalInstances.length} instâncias ativas; Tarefas bloqueadas/atrasadas: ${blockedOrOverdueTasks}; Deliberações pendentes: ${pendingGov}.`,
+      `- Financeiro consolidado: Receitas R$ ${totalRevenue.toLocaleString('pt-BR')} vs. Despesas R$ ${totalExpenses.toLocaleString('pt-BR')}.`,
+      `Responda sempre em Português (Brasil), mantendo continuidade com o histórico da conversa e sem inventar registros que não existam.`,
+    ].join('\n');
+
+    const systemInstruction = `${baseRoleInstruction}\n\n${enterpriseContext}`;
+
+    const normalizedHistory: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+    for (const item of history.slice(-20)) {
+      const text = item?.text?.trim();
+      if (!text) continue;
+      const turnRole: 'user' | 'model' = item.role === 'model' ? 'model' : 'user';
+      const last = normalizedHistory[normalizedHistory.length - 1];
+      if (last && last.role === turnRole) {
+        last.parts[0].text += `\n${text}`;
+      } else if (normalizedHistory.length > 0 || turnRole === 'user') {
+        normalizedHistory.push({ role: turnRole, parts: [{ text }] });
+      }
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+
+    const writeEvent = (payload: Record<string, unknown>) => {
+      res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    };
+
+    try {
+      const chat = ai.chats.create({
+        model,
+        history: normalizedHistory,
+        config: {
+          systemInstruction,
+        },
+      });
+
+      const stream = await chat.sendMessageStream({
+        message: cleanMessage,
+      });
+
+      for await (const chunk of stream) {
+        const delta = chunk.text ?? '';
+        if (delta) {
+          writeEvent({ chunk: delta });
+        }
+      }
+
+      writeEvent({ done: true, model });
+      res.end();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Falha na comunicação com o Gemini.';
+      writeEvent({ error: msg });
+      res.end();
     }
   });
 

@@ -4,6 +4,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CommandPalette } from './components/Common/CommandPalette';
+import { GeminiChatbotDrawer } from './components/Common/GeminiChatbotDrawer';
 import { AppShell, NAV_ITEMS } from './components/Layout/AppShell';
 import { canAccessModule, getFirstAllowedModule, ROLE_DEFINITIONS } from './domain/permissions';
 import { useOnlineStatus } from './hooks/useEnterpriseHooks';
@@ -71,6 +72,7 @@ export default function App() {
   );
 
   const [commandOpen, setCommandOpen] = useState(false);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
   const [openProjectWizard, setOpenProjectWizard] = useState(false);
   const [agentSearchSeed, setAgentSearchSeed] = useState<string | undefined>(undefined);
   const [composerProjectId, setComposerProjectId] = useState<string | undefined>(undefined);
@@ -1061,6 +1063,7 @@ export default function App() {
         onSelectModule={(id) => navigateTo(id)}
         onChangeRole={handleChangeRole}
         onOpenCommandPalette={() => setCommandOpen(true)}
+        onOpenChatbot={() => setChatbotOpen(true)}
         onPrimaryAction={() => navigateTo('projects', { openNewProject: true })}
         isDark={isDark}
         onToggleTheme={() => setIsDark((d) => !d)}
@@ -1104,6 +1107,14 @@ export default function App() {
         onNavigate={(id, extra) => navigateTo(id, extra)}
         onOpenChat={(target) => void handleOpenChat(target)}
         onToggleTheme={() => setIsDark((d) => !d)}
+      />
+
+      <GeminiChatbotDrawer
+        isOpen={chatbotOpen}
+        onClose={() => setChatbotOpen(false)}
+        activeRole={activeRole}
+        activeModule={activeModule}
+        activeModuleLabel={NAV_ITEMS.find((n) => n.id === activeModule)?.label ?? 'Visão Executiva'}
       />
     </>
   );

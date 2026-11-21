@@ -384,6 +384,86 @@ export const AIAdapter = {
     }
     return data.intent;
   },
+
+  async streamChatbotTurn(
+    role: UserRole,
+    input: {
+      message: string;
+      history: Array<{ role: 'user' | 'model'; text: string }>;
+      personaId: string;
+      customSystemInstruction?: string;
+      speedMode: 'balanced' | 'fast';
+      activeModule: string;
+      onChunk: (delta: string) => void;
+    }
+  ): Promise<{ text: string; model: string }> {
+    const res = await fetch('/api/ai/chatbot', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-nettoscorp-role': role,
+      },
+      body: JSON.stringify({
+        message: input.message,
+        history: input.history,
+        personaId: input.personaId,
+        customSystemInstruction: input.customSystemInstruction,
+        speedMode: input.speedMode,
+        activeModule: input.activeModule,
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error || 'Erro ao consultar o chatbot Gemini.');
+    }
+
+    if (!res.body) {
+      throw new Error('Streaming indisponível na resposta do servidor.');
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    let fullText = '';
+    let resolvedModel = input.speedMode === 'fast' ? 'gemini-3.1-flash-lite' : 'gemini-4-hydrogen';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const events = buffer.split('\n\n');
+      buffer = events.pop() ?? '';
+
+      for (const block of events) {
+        const line = block
+          .split('\n')
+          .find((l) => l.startsWith('data: '));
+        if (!line) continue;
+        const jsonStr = line.slice(6).trim();
+        if (!jsonStr) continue;
+        const parsed = JSON.parse(jsonStr) as {
+          chunk?: string;
+          done?: boolean;
+          model?: string;
+          error?: string;
+        };
+        if (parsed.error) {
+          throw new Error(parsed.error);
+        }
+        if (parsed.chunk) {
+          fullText += parsed.chunk;
+          input.onChunk(parsed.chunk);
+        }
+        if (parsed.model) {
+          resolvedModel = parsed.model;
+        }
+      }
+    }
+
+    return { text: fullText, model: resolvedModel };
+  },
 };
 
 export const SystemSyncAdapter = {
