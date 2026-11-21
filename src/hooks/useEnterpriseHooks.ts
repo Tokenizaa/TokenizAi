@@ -70,21 +70,42 @@ export function usePWAInstall() {
   };
 }
 
+interface SpeechRecognitionResultItem {
+  isFinal?: boolean;
+  0: { transcript: string };
+}
+
 interface SpeechRecognitionInstance {
   lang: string;
   interimResults: boolean;
   maxAlternatives: number;
   start: () => void;
   stop: () => void;
-  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  abort?: () => void;
+  onresult: ((event: { resultIndex?: number; results: ArrayLike<SpeechRecognitionResultItem> }) => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onend: (() => void) | null;
 }
 
+export type MicPermissionState = 'prompt' | 'granted' | 'denied' | 'unknown';
+
+const MIC_ERROR_MESSAGES: Record<string, string> = {
+  'not-allowed': 'Permissão de microfone negada. Libere o acesso ao microfone no navegador.',
+  'service-not-allowed': 'Serviço de reconhecimento de voz bloqueado pelas permissões do navegador.',
+  'no-speech': 'Nenhuma fala detectada. Tente falar mais próximo ao microfone.',
+  'audio-capture': 'Nenhum microfone ativo foi encontrado neste dispositivo.',
+  network: 'Falha de rede no reconhecimento de voz do navegador.',
+  aborted: 'Captura de voz cancelada.',
+};
+
 export function useVoiceCommand(onTranscript: (text: string) => void) {
   const [isListening, setIsListening] = useState(false);
+  const [interimTranscript, setInterimTranscript] = useState('');
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [permissionState, setPermissionState] = useState<MicPermissionState>('unknown');
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const onTranscriptRef = useRef(onTranscript);
+  onTranscriptRef.current = onTranscript;
 
   const isSupported =
     typeof window !== 'undefined' &&
@@ -93,11 +114,48 @@ export function useVoiceCommand(onTranscript: (text: string) => void) {
       (window as unknown as Record<string, unknown>).webkitSpeechRecognition
     );
 
-  const startListening = () => {
+  useEffect(() => {
+    let active = true;
+    if (typeof navigator !== 'undefined' && navigator.permissions?.query) {
+      navigator.permissions
+        .query({ name: 'microphone' as PermissionName })
+        .then((status) => {
+          if (!active) return;
+          setPermissionState(status.state as MicPermissionState);
+          status.onchange = () => {
+            if (active) setPermissionState(status.state as MicPermissionState);
+          };
+        })
+        .catch(() => {
+          if (active) setPermissionState('unknown');
+        });
+    }
+    return () => {
+      active = false;
+      recognitionRef.current?.abort?.();
+    };
+  }, []);
+
+  const startListening = async () => {
     setVoiceError(null);
+    setInterimTranscript('');
+
     if (!isSupported) {
       setVoiceError('Reconhecimento de voz não suportado neste navegador. Digite o comando na barra rápida.');
       return;
+    }
+
+    // Explicitly verify/request microphone permission when MediaDevices API is available
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((track) => track.stop());
+        setPermissionState('granted');
+      } catch {
+        setPermissionState('denied');
+        setVoiceError(MIC_ERROR_MESSAGES['not-allowed']);
+        return;
+      }
     }
 
     const SpeechCtor =
@@ -105,23 +163,43 @@ export function useVoiceCommand(onTranscript: (text: string) => void) {
       (window as unknown as Record<string, new () => SpeechRecognitionInstance>).webkitSpeechRecognition;
 
     try {
+      recognitionRef.current?.abort?.();
       const recognition = new SpeechCtor();
       recognition.lang = 'pt-BR';
-      recognition.interimResults = false;
+      recognition.interimResults = true;
       recognition.maxAlternatives = 1;
+
       recognition.onresult = (event) => {
-        const transcript = event.results?.[0]?.[0]?.transcript ?? '';
-        if (transcript.trim()) {
-          onTranscript(transcript.trim());
+        let interim = '';
+        let finalText = '';
+        for (let i = 0; i < event.results.length; i++) {
+          const res = event.results[i];
+          const text = res?.[0]?.transcript ?? '';
+          if (res.isFinal) {
+            finalText += `${text} `;
+          } else {
+            interim += `${text} `;
+          }
+        }
+        setInterimTranscript(interim.trim() || finalText.trim());
+        if (finalText.trim()) {
+          setInterimTranscript('');
+          onTranscriptRef.current(finalText.trim());
         }
       };
+
       recognition.onerror = (ev) => {
-        setVoiceError(`Captura de voz interrompida (${ev.error}).`);
+        setVoiceError(
+          MIC_ERROR_MESSAGES[ev.error] ?? `Captura de voz interrompida (${ev.error}).`
+        );
         setIsListening(false);
+        setInterimTranscript('');
       };
+
       recognition.onend = () => {
         setIsListening(false);
       };
+
       recognitionRef.current = recognition;
       setIsListening(true);
       recognition.start();
@@ -134,13 +212,17 @@ export function useVoiceCommand(onTranscript: (text: string) => void) {
   const stopListening = () => {
     recognitionRef.current?.stop();
     setIsListening(false);
+    setInterimTranscript('');
   };
 
   return {
     isSupported,
     isListening,
+    interimTranscript,
+    permissionState,
     voiceError,
     startListening,
     stopListening,
   };
 }
+

@@ -12,6 +12,7 @@ export type UserRole =
 
 export type ModuleId =
   | 'executive'
+  | 'chat'
   | 'finance'
   | 'commercial'
   | 'customers'
@@ -28,9 +29,16 @@ export type ModuleId =
   | 'governance'
   | 'admin';
 
-export type DataOrigin = 'demonstrativo' | 'integrado' | 'calculado';
+export type DataOrigin = 'demonstrativo' | 'integrado' | 'calculado' | 'real_local';
 
 export type AccentTheme = 'amber' | 'cobalt' | 'emerald' | 'slate';
+
+export type AuthorityLevel =
+  | 'executiva_humana'
+  | 'estrategica_delegada'
+  | 'gerencial'
+  | 'operacional'
+  | 'tecnica';
 
 export interface FinancialEntry {
   id: string;
@@ -44,6 +52,7 @@ export interface FinancialEntry {
   reconciled: boolean;
   linkedContractId?: string;
   linkedProjectId?: string;
+  linkedAgentInstanceId?: string;
   origin: DataOrigin;
 }
 
@@ -130,15 +139,41 @@ export interface ProductServiceItem {
 export type ProjectStatus = 'planejamento' | 'em_execucao' | 'atencao' | 'concluido';
 export type ProjectPriority = 'crítica' | 'alta' | 'média' | 'baixa';
 
+export type TaskLifecycleStatus =
+  | 'planejada'
+  | 'atribuida'
+  | 'em_execucao'
+  | 'bloqueada'
+  | 'em_revisao'
+  | 'concluida'
+  | 'cancelada';
+
 export interface ProjectTask {
   id: string;
   projectId: string;
   title: string;
+  description?: string;
+  assigneeId?: string;
   assigneeName: string;
   assigneeKind: 'humano' | 'agente_operacional';
-  status: 'pendente' | 'em_progresso' | 'revisao' | 'concluida';
+  delegatedBy?: string;
+  status: TaskLifecycleStatus;
   dueDate: string;
   priority: ProjectPriority;
+  completionCriteria: string;
+  completionEvidence?: string;
+  subtasks?: Array<{ id: string; title: string; done: boolean }>;
+  sourceConversationId?: string;
+  sourceMessageId?: string;
+  commentsCount?: number;
+}
+
+export interface NexusPhaseGate {
+  id: string;
+  phase: 'Discovery' | 'Architecture' | 'Execution' | 'Verification' | 'Release';
+  gateCriteria: string;
+  passed: boolean;
+  verifiedBy?: string;
 }
 
 export interface EnterpriseProject {
@@ -150,6 +185,8 @@ export interface EnterpriseProject {
   area: string;
   leadId: string;
   leadName: string;
+  budgetBRL?: number;
+  spentBRL?: number;
   humanTeamIds: string[];
   selectedAgentIds: string[];
   operationalInstanceIds: string[];
@@ -160,9 +197,11 @@ export interface EnterpriseProject {
   repoSlug?: string;
   architectureSummary?: string;
   requirements: string[];
+  nexusGates?: NexusPhaseGate[];
   linkedAccountId?: string;
   linkedContractId?: string;
   linkedProductId?: string;
+  linkedConversationId?: string;
   origin: DataOrigin;
   updatedAt: string;
 }
@@ -219,34 +258,119 @@ export type AgentDivision =
 
 export type HomologationStatus = 'homologado' | 'em_avaliacao' | 'catalogo';
 
+// Dimensão 1: Identidade Profissional (Agency Agents)
 export interface AgentBlueprint {
   id: string;
   code: string;
+  slug: string;
   name: string;
   division: AgentDivision;
   specialty: string;
   summary: string;
+  // Metadados preservados do Agency Agents Markdown
+  archetype: string;
+  personality: string;
+  communicationStyle: string;
+  workStyle: string;
+  decisionMakingStyle: string;
+  vibe: string;
+  color: string;
+  emoji: string;
+  version: string;
+  originPath: string;
   competencies: string[];
+  knowledgeAreas: string[];
+  skills: string[];
   responsibilities: string[];
   limitations: string[];
   methodology: string;
   instructions: string;
   runbook: string[];
+  nexusGates: string[];
   homologationStatus: HomologationStatus;
   paperclipCompatible: boolean;
   sourceCatalog: 'Agency Agents (Acervo 283)';
 }
 
+export interface NexusPresetTeam {
+  id: string;
+  name: string;
+  scenario: string;
+  description: string;
+  agentCodes: string[];
+  nexusWorkflow: string[];
+}
+
+// Dimensão 2: Posição Organizacional (Paperclip / NettosCorp Org)
+export interface DepartmentRecord {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  headPositionId?: string;
+  budgetAllocatedBRL: number;
+  linkedChannelId?: string;
+}
+
+export interface OrgPosition {
+  id: string;
+  title: string;
+  departmentId: string;
+  reportsToPositionId?: string;
+  authorityLevel: AuthorityLevel;
+  holderType: 'humano' | 'agente_operacional' | 'vago';
+  holderId?: string; // PersonRecord.id or OperationalAgentInstance.id
+  budgetLimitBRL: number;
+  responsibilities: string[];
+  projectIds: string[];
+  operationalState: 'ativo' | 'vago' | 'pausado';
+}
+
+export interface AgentExecutionSession {
+  id: string;
+  instanceId: string;
+  triggeredBy: string;
+  channelId?: string;
+  taskId?: string;
+  adapterUsed: string;
+  modelUsed: string;
+  status: 'concluida' | 'falhou' | 'integracao_pendente';
+  tokensEstimated: number;
+  costBRL: number;
+  summary: string;
+  startedAt: string;
+  finishedAt: string;
+}
+
+// Dimensão 3: Configuração & Instância Operacional (Paperclip Runtime)
 export interface OperationalAgentInstance {
   id: string;
   blueprintId: string;
   blueprintCode: string;
   instanceName: string;
   division: AgentDivision;
+  positionId?: string;
+  departmentId?: string;
   projectId: string;
   projectName: string;
-  runtimeEngine: 'Paperclip Runtime';
-  executionState: 'aguardando_paperclip' | 'pronto_para_execucao' | 'pausado';
+  runtimeEngine: 'Paperclip Runtime' | 'TokenizAi Native Orchestrator';
+  provider: 'Google Gemini' | 'Paperclip External' | 'OpenAI' | 'Anthropic';
+  model: string;
+  adapter: 'gemini-server-native' | 'paperclip-http-adapter';
+  tools: string[];
+  permissions: string[];
+  credentialRef: string;
+  envRefKeys: string[];
+  maxExecutionsPerDay: number;
+  monthlyBudgetBRL: number;
+  spentBudgetBRL: number;
+  heartbeatIntervalSec: number;
+  executionState:
+    | 'ativo_pronto'
+    | 'processando'
+    | 'aguardando_aprovacao'
+    | 'pausado'
+    | 'aguardando_paperclip';
   assignedTasksCount: number;
   guardrailPolicy: string;
   lastHeartbeat: string;
@@ -278,12 +402,15 @@ export interface PersonRecord {
   name: string;
   roleTitle: string;
   department: string;
+  departmentId?: string;
+  positionId?: string;
   managerId?: string;
   avatarUrl?: string;
   capacityPercent: number;
   competencies: string[];
   assignedProjectIds: string[];
   accessRole: UserRole;
+  authorityLevel: AuthorityLevel;
   email: string;
 }
 
@@ -299,6 +426,7 @@ export interface GovernanceRecord {
   authorName: string;
   authorityRole: string;
   linkedProjectId?: string;
+  linkedConversationId?: string;
   createdAt: string;
   auditHash: string;
 }
@@ -306,7 +434,13 @@ export interface GovernanceRecord {
 export interface IntegrationConfig {
   id: string;
   name: string;
-  category: 'Persistência' | 'Código & CI/CD' | 'Runtime de Agentes' | 'Modelos de IA' | 'Financeiro & Fiscal' | 'Produtividade & Agenda';
+  category:
+    | 'Persistência'
+    | 'Código & CI/CD'
+    | 'Runtime de Agentes'
+    | 'Modelos de IA'
+    | 'Financeiro & Fiscal'
+    | 'Produtividade & Agenda';
   status: 'não configurado' | 'ativo' | 'parcial';
   endpointLabel: string;
   description: string;
@@ -349,6 +483,80 @@ export interface SyncQueueItem {
   synced: boolean;
 }
 
+// Domínio de Comunicação & Chat Nativo (Paperclip-Inspired)
+export type ConversationKind =
+  | 'direct_agent'
+  | 'inter_agent'
+  | 'department'
+  | 'project'
+  | 'committee';
+
+export type MessageLifecycleStatus =
+  | 'created'
+  | 'delivered'
+  | 'execution_requested'
+  | 'agent_processing'
+  | 'response_received'
+  | 'execution_completed'
+  | 'execution_failed'
+  | 'integration_pending';
+
+export interface ChatParticipant {
+  id: string;
+  kind: 'humano' | 'agente_operacional';
+  name: string;
+  roleTitle: string;
+  department?: string;
+  avatarUrl?: string;
+  color?: string;
+  emoji?: string;
+}
+
+export interface ChatContextRef {
+  kind: 'project' | 'task' | 'department' | 'governance' | 'agent_profile';
+  id: string;
+  label: string;
+}
+
+export interface ChatConversation {
+  id: string;
+  kind: ConversationKind;
+  title: string;
+  subtitle: string;
+  participantIds: string[];
+  participants: ChatParticipant[];
+  contextRef?: ChatContextRef;
+  departmentId?: string;
+  projectId?: string;
+  unreadCount: number;
+  mentionsCount: number;
+  lastMessageAt: string;
+  lastMessagePreview: string;
+  allowedRoles: UserRole[];
+}
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderKind: 'humano' | 'agente_operacional' | 'sistema';
+  senderName: string;
+  senderRole: string;
+  recipientId?: string;
+  recipientName?: string;
+  content: string;
+  lifecycleStatus: MessageLifecycleStatus;
+  createdAt: string;
+  mentions?: string[];
+  attachments?: Array<{ name: string; kind: string; refId?: string }>;
+  contextRef?: ChatContextRef;
+  linkedTaskId?: string;
+  linkedGovernanceId?: string;
+  sessionId?: string;
+  modelUsed?: string;
+  isDelegationRequest?: boolean;
+}
+
 export interface EnterpriseState {
   financialEntries: FinancialEntry[];
   costCenters: CostCenterBudget[];
@@ -362,7 +570,10 @@ export interface EnterpriseState {
   repos: SoftwareRepo[];
   incidents: TechIncident[];
   aiSolutions: AISolution[];
+  departments: DepartmentRecord[];
+  orgPositions: OrgPosition[];
   operationalInstances: OperationalAgentInstance[];
+  executionSessions: AgentExecutionSession[];
   compositions: TeamCompositionRecord[];
   people: PersonRecord[];
   governance: GovernanceRecord[];
@@ -370,5 +581,7 @@ export interface EnterpriseState {
   weeklyProgress: WeeklyProgressPoint[];
   commitments: CalendarCommitment[];
   notifications: AppNotification[];
+  conversations: ChatConversation[];
+  messages: ChatMessage[];
   homologationOverrides: Record<string, HomologationStatus>;
 }

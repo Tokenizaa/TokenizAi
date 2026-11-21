@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   Megaphone,
   Menu,
+  MessageSquare,
   Moon,
   Package,
   RefreshCw,
@@ -39,6 +40,7 @@ export interface SidebarNavItem {
 
 export const NAV_ITEMS: SidebarNavItem[] = [
   { id: 'executive', label: 'Visão Executiva', group: 'Visão Geral', shortcut: 'G E', icon: LayoutDashboard },
+  { id: 'chat', label: 'Comunicação & Chat', group: 'Visão Geral', shortcut: 'G M', icon: MessageSquare },
 
   { id: 'finance', label: 'Financeiro', group: 'Gestão Empresarial', shortcut: 'G F', icon: DollarSign },
   { id: 'commercial', label: 'Comercial & CRM', group: 'Gestão Empresarial', shortcut: 'G C', icon: Briefcase },
@@ -85,6 +87,7 @@ interface AppShellProps {
   onSyncNow: () => void;
   notifications: AppNotification[];
   onMarkAllRead: () => void;
+  chatUnreadCount?: number;
   children: React.ReactNode;
 }
 
@@ -103,6 +106,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   onSyncNow,
   notifications,
   onMarkAllRead,
+  chatUnreadCount = 0,
   children,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -131,7 +135,7 @@ export const AppShell: React.FC<AppShellProps> = ({
             <span className="font-display font-bold text-xs text-white">N</span>
           </div>
           <span className="font-display font-bold text-sm tracking-tight text-ink whitespace-nowrap">
-            NettosCorp
+            NettosCorp · TokenizAi
           </span>
         </button>
         <button
@@ -182,7 +186,12 @@ export const AppShell: React.FC<AppShellProps> = ({
                         }`}
                       >
                         <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-accent' : 'text-ink-subtle'}`} />
-                        <span className="truncate">{item.label}</span>
+                        <span className="truncate flex-1 text-left">{item.label}</span>
+                        {item.id === 'chat' && chatUnreadCount > 0 && (
+                          <span className="min-w-4 h-4 px-1 rounded-full bg-accent text-white text-[10px] font-mono font-semibold flex items-center justify-center tabular-nums">
+                            {chatUnreadCount}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
