@@ -1,0 +1,10 @@
+{
+  "name": "NettosCorp Enterprise",
+  "description": "Plataforma integrada de comando, gestão empresarial, portfólio e inteligência operacional da NettosCorp.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

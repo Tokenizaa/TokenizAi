@@ -1,0 +1,127 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --nc-canvas: #f8fafc;
+  --nc-surface: #ffffff;
+  --nc-surface-subtle: #f1f5f9;
+  --nc-border: #e2e8f0;
+  --nc-border-strong: #cbd5e1;
+  --nc-ink: #0f172a;
+  --nc-ink-muted: #475569;
+  --nc-ink-subtle: #64748b;
+  --nc-accent: #d97706;
+  --nc-accent-hover: #b45309;
+  --nc-accent-soft: #fef3c7;
+  --nc-accent-ink: #92400e;
+}
+
+.dark {
+  --nc-canvas: #0b0f17;
+  --nc-surface: #111827;
+  --nc-surface-subtle: #1e293b;
+  --nc-border: #1f2937;
+  --nc-border-strong: #334155;
+  --nc-ink: #f8fafc;
+  --nc-ink-muted: #cbd5e1;
+  --nc-ink-subtle: #94a3b8;
+  --nc-accent: #f59e0b;
+  --nc-accent-hover: #fbbf24;
+  --nc-accent-soft: rgba(245, 158, 11, 0.14);
+  --nc-accent-ink: #fcd34d;
+}
+
+[data-accent="cobalt"] {
+  --nc-accent: #2563eb;
+  --nc-accent-hover: #1d4ed8;
+  --nc-accent-soft: #dbeafe;
+  --nc-accent-ink: #1e40af;
+}
+.dark[data-accent="cobalt"] {
+  --nc-accent: #3b82f6;
+  --nc-accent-hover: #60a5fa;
+  --nc-accent-soft: rgba(59, 130, 246, 0.16);
+  --nc-accent-ink: #93c5fd;
+}
+
+[data-accent="emerald"] {
+  --nc-accent: #059669;
+  --nc-accent-hover: #047857;
+  --nc-accent-soft: #d1fae5;
+  --nc-accent-ink: #065f46;
+}
+.dark[data-accent="emerald"] {
+  --nc-accent: #10b981;
+  --nc-accent-hover: #34d399;
+  --nc-accent-soft: rgba(16, 185, 129, 0.16);
+  --nc-accent-ink: #6ee7b7;
+}
+
+[data-accent="slate"] {
+  --nc-accent: #334155;
+  --nc-accent-hover: #1e293b;
+  --nc-accent-soft: #e2e8f0;
+  --nc-accent-ink: #0f172a;
+}
+.dark[data-accent="slate"] {
+  --nc-accent: #94a3b8;
+  --nc-accent-hover: #cbd5e1;
+  --nc-accent-soft: rgba(148, 163, 184, 0.16);
+  --nc-accent-ink: #e2e8f0;
+}
+
+@layer base {
+  body {
+    font-family: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--nc-canvas);
+    color: var(--nc-ink);
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .font-mono, code, pre {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+}
+
+.bg-canvas { background-color: var(--nc-canvas); }
+.bg-surface { background-color: var(--nc-surface); }
+.bg-surface-subtle { background-color: var(--nc-surface-subtle); }
+.border-line { border-color: var(--nc-border); }
+.border-line-strong { border-color: var(--nc-border-strong); }
+.text-ink { color: var(--nc-ink); }
+.text-ink-muted { color: var(--nc-ink-muted); }
+.text-ink-subtle { color: var(--nc-ink-subtle); }
+
+.text-accent { color: var(--nc-accent); }
+.text-accent-ink { color: var(--nc-accent-ink); }
+.bg-accent { background-color: var(--nc-accent); }
+.hover\:bg-accent-hover:hover { background-color: var(--nc-accent-hover); }
+.bg-accent-soft { background-color: var(--nc-accent-soft); }
+.border-accent { border-color: var(--nc-accent); }
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* AI Studio inspired luminous translucent overlays (strictly for command windows & drawers) */
+.nc-glass-window {
+  background-color: color-mix(in srgb, var(--nc-surface) 88%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 20px 50px -12px rgba(15, 23, 42, 0.16), 0 0 0 1px color-mix(in srgb, var(--nc-border-strong) 70%, transparent);
+}
+
+.dark .nc-glass-window {
+  background-color: color-mix(in srgb, var(--nc-surface) 84%, transparent);
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
