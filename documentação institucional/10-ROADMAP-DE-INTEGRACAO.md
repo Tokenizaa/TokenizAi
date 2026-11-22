@@ -2,7 +2,7 @@
 
 > **Versão:** 1.0  
 > **Data:** 21 de novembro de 2026  
-> **Status:** **PROPOSTA** — Aguarda aprovação do Founder  
+> **Status:** **EXECUÇÃO AUTORIZADA — Fase 0 em validação; avanço bloqueado até CI verde**  
 > **Base:** Arquitetura Alvo (05) + Modelo de Domínio (06) + Segurança (09)  
 > **Responsável:** Hermes
 
@@ -12,7 +12,7 @@
 
 | Fase | Nome | Duração | Objetivo Principal | Entregável Chave |
 |------|------|---------|-------------------|------------------|
-| **0** | **Bootstrap & Fixes Críticos** | 1 sem | Recuperar upstream, fixar Hermes, CI básico | Hermes plugin funcional, CI verde |
+| **0** | **Bootstrap & Fixes Críticos** | 1 sem | Recuperar upstream, fixar Hermes, CI básico | Hermes plugin funcional, CI verde — **em validação** |
 | **1** | **Foundation Packages** | 2-3 sem | Extrair `@nettoscorp/shared`, `@nettoscorp/db`, `@nettoscorp/auth` | 3 packages publicados no npm privado |
 | **2** | **Adapters & MCP** | 1-2 sem | Publicar 12 adapters ACP + MCP server/gateway | 14 packages publicados |
 | **3** | **Plugin SDK v2** | 1 sem | `@nettoscorp/plugin-sdk` independente + sandbox providers | Package + docs + examples |
@@ -41,7 +41,17 @@
 | Recuperar pasta `strategy/` (NEXUS) do upstream | Hermes | 7 arquivos NEXUS no checkout |
 | Configurar GitHub Actions básico: `cargo fmt`, `cargo test`, `npm run check`, `npm run build` | Platform | CI verde no fork Tokenizaa |
 | Patch Antigravity `date_added` → determinístico | Hermes | Parity test passa para antigravity |
-| Fix `EvidenceQA` → `testing-evidence-collector` no orchestrator | Hermes | Agente referência correto |
+| Fix `EvidenceQA` → `testing-evidence-collector` no orchestrator | Platform | Agente referência corrigido no commit `4df4038` |
+
+**Estado de execução (22/11/2026):**
+
+- [x] Builder Hermes e scripts de validação já presentes no fork `Tokenizaa/agency-agents`; nenhum recopy desnecessário do upstream.
+- [x] Pasta `strategy/` presente: estratégia NEXUS, sete playbooks de fase e runbooks de cenário.
+- [x] Conversor Antigravity atual não gera `date_added`; teste de determinismo criado e conectado ao workflow.
+- [x] Quatro referências antigas `EvidenceQA` substituídas pelo slug real `testing-evidence-collector`.
+- [x] CI da aplicação ampliado para executar `npm run build`, além de `cargo fmt`, `cargo test` e `npm run check`.
+- [x] CI do corpus ampliado para gerar e testar o plugin Hermes e verificar determinismo Antigravity.
+- [ ] **Bloqueio de homologação:** execuções do GitHub Actions em ambos os repositórios terminaram em falha antes de qualquer step (lista de steps vazia/nula); logs não foram disponibilizados. A causa ainda não foi determinada. A Fase 0 permanece aberta até que os workflows executem e fiquem verdes.
 
 ### Fase 1: Foundation Packages (2-3 semanas)
 
@@ -228,4 +238,4 @@
 
 ---
 
-*Roadmap proposto. Requer aprovação do Founder (Netto Farias) para iniciar. Cada fase tem revisão técnica obrigatória antes de prosseguir.*
+*Execução da Fase 0 autorizada pelo Founder (Netto Farias). O roadmap será executado uma fase completa por rodada; nenhuma fase seguinte começa antes da homologação integral da fase atual.*

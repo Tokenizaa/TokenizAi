@@ -2,7 +2,7 @@
 
 > **Versão:** 2.0  
 > **Data:** 21 de novembro de 2026  
-> **Status:** **CONSOLIDADO COM EVIDÊNCIAS REAIS** — Baseado em auditoria de código dos 3 repositórios  
+> **Status:** **CONSOLIDADO COM EVIDÊNCIAS REAIS** — Atualizado com auditoria direta de 4 repositórios e estado do GitHub Actions  
 > **Responsável:** Hermes
 
 ---
@@ -31,27 +31,32 @@
 
 ---
 
-### 1.2 Agency Agents (Fork Local) — `/home/lg/workspace/NettosCorp/NettosCorp/enterprise/agency-agents`
+### 1.2 Agency Agents — Corpus Fork — `Tokenizaa/agency-agents`
 
 | Componente | Status | Evidência | Classificação |
 |------------|--------|-----------|---------------|
-| **Catálogo 282 agentes** | ✅ **EVIDENCIADO** | `src-tauri/resources/corpus-baseline/` (282 `.md`) | ✅ **APROVEITAR** |
-| **21 Divisões** | ✅ **EVIDENCIADO** | `src-tauri/data/agency-categories.json` | ✅ **APROVEITAR** |
-| **18 Ferramentas (tools.json)** | ✅ **EVIDENCIADO** | `src-tauri/data/tools.json` | ✅ **APROVEITAR** |
-| **Convert.sh (954 linhas)** | ✅ **EVIDENCIADO** | `src-tauri/resources/corpus-baseline/scripts/convert.sh` | ✅ **APROVEITAR** |
-| **App Tauri (Rust)** | ✅ **EVIDENCIADO** | `src-tauri/src/` (corpus, render, install, registry) | ✅ **APROVEITAR** |
-| **UI Svelte 5** | ✅ **EVIDENCIADO** | `src/` (4 pilares) | ✅ **APROVEITAR** |
-| **NEXUS Strategy** | ❌ **AUSENTE NO FORK** | `find . -name "nexus*" -o -name "strategy"` → vazio | 🔴 **SYNC UPSTREAM** |
-| **Hermes Plugin** | 🔴 **QUEBRADO** | `tools.json:17` + `convert.sh:791-794` mas `build-hermes-plugin.py` **AUSENTE** | 🔴 **FIX CRÍTICO** |
-| **Scripts Validação** | ❌ **AUSENTES** | `lib.sh`, `install.sh`, `lint-agents.sh`, `check-divisions.sh`, `check-tools.sh` **AUSENTES** | 🔴 **SYNC UPSTREAM** |
-| **CI/CD** | ❌ **AUSENTE** | `.github/workflows/` **VAZIO** | 🔴 **IMPLEMENTAR** |
-| **NEXUS Playbooks/Runbooks** | ❌ **AUSENTES** | Pasta `strategy/` **AUSENTE** no fork | 🔴 **SYNC UPSTREAM** |
-| **Antigravity date_added** | 🔴 **NON-DETERMINISTIC** | `docs/PLAN.md:88` | 🔴 **PATCH NECESSÁRIO** |
-| **EvidenceQA name mismatch** | 🔴 **INCONSISTÊNCIA** | `agents-orchestrator.md:89` vs `testing-evidence-collector.md` | 🔴 **FIX NECESSÁRIO** |
+| **Catálogo de agentes** | ✅ **EVIDENCIADO** | 282 arquivos de agentes nas 18 divisões definidas em `divisions.json` | ✅ **APROVEITAR** |
+| **Hermes Plugin Builder** | ✅ **PRESENTE** | `scripts/build-hermes-plugin.py` | 🟡 **VALIDAÇÃO CI PENDENTE** |
+| **Hermes Plugin Contract Check** | ✅ **PRESENTE** | `scripts/check-hermes-plugin.py` | 🟡 **VALIDAÇÃO CI PENDENTE** |
+| **Hermes Plugin Behavior Test** | ✅ **PRESENTE** | `scripts/test-hermes-plugin.py` | 🟡 **VALIDAÇÃO CI PENDENTE** |
+| **Scripts operacionais** | ✅ **PRESENTES** | `scripts/lib.sh`, `install.sh`, `lint-agents.sh`, `check-divisions.sh`, `check-tools.sh` | 🟡 **EXECUÇÃO CI PENDENTE** |
+| **NEXUS Strategy** | ✅ **PRESENTE** | `strategy/nexus-strategy.md`, `strategy/playbooks/` (7 playbooks), `strategy/runbooks/` (4 runbooks) | 🟡 **VALIDAÇÃO CI PENDENTE** |
+| **Antigravity** | ✅ **DETERMINÍSTICO NO CÓDIGO ATUAL** | `scripts/convert.sh`: conversor não emite `date_added`; teste de regressão criado em `scripts/test-antigravity-determinism.sh` | 🟡 **EXECUÇÃO CI PENDENTE** |
+| **Agents Orchestrator** | ✅ **REFERÊNCIA CORRIGIDA** | `specialized/agents-orchestrator.md`: quatro referências atualizadas para `testing-evidence-collector` | ✅ **CORRIGIDO** |
+| **Workflows do corpus** | ⚠️ **EXECUÇÃO NÃO HOMOLOGADA** | Workflows existentes; novas verificações Hermes/Antigravity adicionadas em `.github/workflows/check-tools.yml` | 🔴 **BLOQUEIO CI** |
 
----
+### 1.3 Agency Agents — Desktop App — `Tokenizaa/agency-agents-app`
 
-### 1.3 Paperclip — `/home/lg/workspace/NettosCorp/NettosCorp/paperclip`
+| Componente | Status | Evidência | Classificação |
+|------------|--------|-----------|---------------|
+| **Frontend** | ✅ **EVIDENCIADO** | `package.json`: Svelte 5 + SvelteKit + Vite | ✅ **APROVEITAR** |
+| **Desktop backend** | ✅ **EVIDENCIADO** | `src-tauri/Cargo.toml`: Tauri 2 + Rust edition 2021 | ✅ **APROVEITAR** |
+| **Rust formatting** | ✅ **NO WORKFLOW** | `.github/workflows/pr-check.yml`: `cargo fmt --check` | 🟡 **EXECUÇÃO CI PENDENTE** |
+| **Rust tests** | ✅ **NO WORKFLOW** | `.github/workflows/pr-check.yml`: `cargo test` | 🟡 **EXECUÇÃO CI PENDENTE** |
+| **Frontend typecheck** | ✅ **NO WORKFLOW** | `.github/workflows/pr-check.yml`: `npm run check` | 🟡 **EXECUÇÃO CI PENDENTE** |
+| **Frontend production build** | ✅ **ADICIONADO** | Commit `5757c80`: `npm run build` incluído no PR Check | 🟡 **EXECUÇÃO CI PENDENTE** |
+
+### 1.4 Paperclip — `/home/lg/workspace/NettosCorp/NettosCorp/paperclip`
 
 | Componente | Status | Evidência | Classificação |
 |------------|--------|-----------|---------------|
@@ -84,15 +89,15 @@
 | **P0-04** | **Nenhum auth providers** | TokenizAi | `server.ts` — sem auth middleware | Better Auth + GitHub/Google/Slack OAuth | Platform Engineer | Fase 1 |
 | **P0-04** | **Paperclip não configurado** | TokenizAi | `enterpriseSeed.ts:771-778`, `server.ts:57` | Configurar `PAPERCLIP_ENDPOINT` + `PAPERCLIP_API_KEY` | Platform Engineer | Fase 0 |
 | **P0-05** | **Supabase não configurado** | TokenizAi | `enterpriseSeed.ts:751-760`, `server.ts:56` | Configurar `SUPABASE_URL` + `SUPABASE_ANON_KEY` | Platform Engineer | Fase 0 |
-| **P0-06** | **Hermes Plugin quebrado** | Agency Agents | `build-hermes-plugin.py` **AUSENTE** no fork | Recuperar do upstream `msitarzewski/agency-agents` | Hermes | Fase 0 |
-| **P0-07** | **Scripts validação AA ausentes** | Agency Agents | `lib.sh`, `install.sh`, `lint-agents.sh`, `check-divisions.sh`, `check-tools.sh` **AUSENTES** | Recuperar do upstream `msitarzewski/agency-agents` | Hermes | Fase 0 |
-| **P0-08** | **NEXUS Strategy ausente** | Agency Agents | `find . -name "nexus*" -o -name "strategy"` → vazio | Sync pasta `strategy/` do upstream | Hermes | Fase 0 |
-| **P0-09** | **Antigravity non-deterministic** | Agency Agents | `docs/PLAN.md:88` — `date_added: '${TODAY}'` | Patch `convert.sh` → `date_added` fixo | Hermes | Fase 0 |
-| **P0-10** | **EvidenceQA name mismatch** | Agency Agents | `agents-orchestrator.md:89` vs `testing-evidence-collector.md` | Fix nome no orchestrator ou alias no frontmatter | Hermes | Fase 0 |
-| **P0-11** | **Antigravity parity test fail** | Agency Agents | `docs/PLAN.md:88` — parity test impossível | Patch `convert.sh` → `date_added` determinístico | Hermes | Fase 0 |
-| **P0-12** | **NEXUS Strategy ausente no fork** | Agency Agents | `strategy/` **AUSENTE** no fork Tokenizaa | Sync `strategy/` do upstream `msitarzewski/agency-agents` | Hermes | Fase 0 |
-| **P0-13** | **Scripts validação AA ausentes** | Agency Agents | `lib.sh`, `install.sh`, `lint-agents.sh`, `check-divisions.sh`, `check-tools.sh` **AUSENTES** | Recuperar do upstream | Hermes | Fase 0 |
-| **P0-14** | **CI/CD ausente no fork AA** | Agency Agents | `.github/workflows/` **VAZIO** | Implementar GitHub Actions básico | Hermes | Fase 0 |
+| **P0-06** | Validação funcional do Hermes Plugin | Agency Agents | Builder, contract check e behavior test presentes; execução ainda não homologada | CI gera o plugin e executa os dois testes; exigir execução verde | Platform | Fase 0 |
+| **P0-07** | Validação dos scripts do Agency Agents | Agency Agents | `lib.sh`, `install.sh`, `lint-agents.sh`, `check-divisions.sh` e `check-tools.sh` presentes no fork | Executar workflows de validação e corrigir falhas reais | Platform | Fase 0 |
+| **P0-08** | Validação da NEXUS Strategy | Agency Agents | `strategy/nexus-strategy.md`, 7 playbooks e 4 runbooks presentes | Executar validação de runbooks e revisar consistência | Platform | Fase 0 |
+| **P0-09** | Regressão de determinismo Antigravity | Agency Agents | Conversor atual não emite `date_added`; teste determinístico adicionado | Executar `scripts/test-antigravity-determinism.sh` em CI | Platform | Fase 0 |
+| **P0-10** | Referência EvidenceQA obsoleta | Agency Agents | Quatro ocorrências em `specialized/agents-orchestrator.md` substituídas por `testing-evidence-collector` no commit `4df4038` | Reexecutar linter após restauração do CI | Platform | Fase 0 |
+| **P0-11** | Parity/determinismo Antigravity | Agency Agents | Teste de regressão adicionado; resultado ainda não executado | Confirmar resultado verde do teste | Platform | Fase 0 |
+| **P0-12** | NEXUS Strategy — item duplicado de P0-08 | Agency Agents | Conteúdo presente em `strategy/`; não é mais ausência de arquivo | Consolidar como resolvido após validação CI | Platform | Fase 0 |
+| **P0-13** | Scripts de validação — item duplicado de P0-07 | Agency Agents | Scripts previstos estão presentes no fork | Consolidar como resolvido após validação CI | Platform | Fase 0 |
+| **P0-14** | Homologação do GitHub Actions | Agency Agents + Desktop App | Workflows adicionados/atualizados; execuções falharam antes de iniciar steps (steps vazios/nulos), sem logs recuperáveis | Verificar disponibilidade/permissões dos runners e obter CI verde nos dois repositórios | Platform | Fase 0 |
 
 ---
 
@@ -138,8 +143,8 @@
 | **Paperclip** | Embedded PG behavior under load | ❓ Não Verificado | Precisa load test |
 | **Paperclip** | RLS Policies enforcement real | ❓ Não Verificado | Precisa `ENABLE_RLS_ENFORCEMENT=true` + test |
 | **Paperclip** | MCP Gateway OAuth flow real | ❓ Não Verificado | Precisa client credentials test |
-| **Agency Agents** | `build-hermes-plugin.py` functionality | ❓ Não Verificado | Precisa recuperar do upstream + test |
-| **Agency Agents** | NEXUS playbooks/runbooks completeness | ❓ Não Verificado | Precisa sync upstream `strategy/` + review |
+| **Agency Agents** | Hermes plugin build + behavior | ⚠️ Implementado, não homologado | Builder, contract check e behavior test estão presentes; CI não iniciou steps |
+| **Agency Agents** | NEXUS playbooks/runbooks completeness | ⚠️ Conteúdo presente, validação pendente | 7 playbooks e 4 runbooks; workflow de consistência sem execução homologada |
 | **Agency Agents** | Hermes plugin end-to-end | ❓ Não Verificado | Precisa plugin instalado no Hermes + test |
 
 ---
@@ -205,3 +210,16 @@
 ---
 
 *Documento consolidado com evidências reais de auditoria de código. Cada pendência tem evidência rastreável (`arquivo:linha` ou comando de busca). Pendências P0 bloqueiam início da implementação; P1 necessárias para MVP; P2 pós-MVP.*
+
+## 9. Atualização da Fase 0 — 22/11/2026
+
+### Commits publicados
+
+- Agency Agents corpus: `4df40386ee1c09c3c5b569f08fe3f7f3f23afd53` — correção das referências do orquestrador, execução do builder/testes Hermes e teste de determinismo Antigravity conectado ao workflow.
+- Agency Agents desktop app: `5757c807066db62c22fefbe7d2ca9e4a5c29c070` — `npm run build` incluído no PR Check.
+
+### Evidência de GitHub Actions
+
+As execuções criadas para os dois commits terminaram com `conclusion=failure`. Os endpoints de jobs retornaram `steps=[]` ou `steps=null`, com duração de aproximadamente três segundos; os logs não estavam disponíveis para recuperação. O mesmo padrão ocorreu após uma tentativa de reexecução. Portanto, não há evidência de que os comandos de build/test tenham começado, nem evidência de falha causada pelo código.
+
+**Decisão:** Fase 0 parcialmente implementada, mas **não homologada**. A única condição impeditiva para encerramento é obter execução real e verde dos workflows. Não iniciar a Fase 1 antes disso.
