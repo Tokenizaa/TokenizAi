@@ -80,10 +80,30 @@ Após as correções, o Supabase registra:
 
 - `20261122000942 — harden_agency_catalog_rls`
 - `20261122000956 — restrict_rls_event_function`
+- `20261122001109 — create_company_memberships`
 
 As migrations SQL correspondentes estão versionadas no repositório.
 
 A ausência anterior de histórico de migrations é uma pendência estrutural: o schema preexistente precisa ser reconciliado e colocado sob controle de versão sem recriar ou sobrescrever objetos existentes.
+
+
+### 3.3. Vínculo entre usuário autenticado e organização
+
+Foi criada a tabela `public.company_memberships`, sem alterar registros empresariais existentes.
+
+- Arquivo: `supabase/migrations/20261122004000_create_company_memberships.sql`
+- Migration Supabase: `create_company_memberships`
+- Commit GitHub: `3abbd3b4bbdb655a6504a44406f804fb841e4072`
+
+A tabela relaciona `auth.users`, `companies` e o papel da aplicação, com status de associação. RLS está habilitado. Usuários autenticados podem consultar apenas a própria associação; `anon` não tem SELECT. Não há políticas de escrita para usuários finais.
+
+Verificação posterior:
+- RLS habilitado.
+- Uma política de SELECT próprio.
+- `anon_select = false`.
+- `authenticated_select = true`.
+
+Nenhum usuário foi criado ou associado nesta etapa.
 
 ## 5. Bloqueios técnicos confirmados
 
