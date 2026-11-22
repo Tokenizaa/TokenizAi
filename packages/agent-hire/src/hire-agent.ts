@@ -39,11 +39,22 @@ import {
 } from './frontmatter-extension';
 import { bindAgentBudget } from './budget-binding';
 import { provisionAgentTools } from './tool-provisioning';
+import {
+  authorizeHire,
+  type HireContext,
+} from './rbac-hire';
+import {
+  PaperclipClient,
+  PaperclipClientError,
+  buildPaperclipSpec,
+  validateHireSpec,
+} from './paperclip-client';
 import type {
   AgentConfig,
   AgentConfigBase,
   HireOptions,
   NettoscorpFrontmatter,
+  PaperclipAgentResult,
 } from './types';
 
 /** Validação de entrada do endpoint hireAgent. */
@@ -112,6 +123,34 @@ export async function hireAgent(
     dryRun: options.dryRun,
     divisionOverride: options.divisionOverride,
   });
+
+  // 0. Autorização RBAC — nenhuma contratação sem permissão válida
+  //    O cliente nunca é a autoridade: a decisão é sempre tomada no servidor.
+  const hireCtx: HireContext = {
+    actorId: options.actorId ?? 'system',
+    actorRole: (options.actorRole ?? 'recruiter') as
+      | 'recruiter'
+      | 'hiring_manager'
+      | 'department_head'
+      | 'security_officer'
+      | 'company_admin'
+      | 'platform_admin',
+    actorCompanyId: options.actorCompanyId ?? 'system',
+    actorDepartment: options.actorDepartment,
+    correlationId,
+  };
+  try {
+    authorizeHire('hire.request', hireCtx);
+  } catch (err) {
+    log('warn', 'hireAgent: autorização RBAC negada', {
+      slug,
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    throw new AgentHireError(
+      `Contratação não autorizada: ${err instanceof Error ? err.message : String(err)}`,
+      slug,
+    );
+  }
 
   // 1. Validação de entrada
   HireAgentInputSchema.parse({ slug, ...options });
@@ -219,24 +258,89 @@ export async function hireAgent(
     budgetPolicy: budget.policy,
   };
 
+  // 10. Cria a instância operacional no Paperclip (se não for dry-run)
+  //     Não falha a contratação se o Paperclip estiver indisponível —
+  //     o AgentConfig ainda é válido, apenas sem a instância remota.
+  let paperclipAgent: PaperclipAgentResult | undefined;
+  if (!options.dryRun) {
+    try {
+      const paperclipClient = new PaperclipClient({
+        baseUrl: options.paperclipBaseUrl,
+        apiKey: options.paperclipApiKey,
+      });
+      const spec = buildPaperclipSpec(
+        slug,
+        roleConfig.nettoscorpRole,
+        roleConfig.department,
+        roleConfig.clearance,
+        roleConfig.authority,
+        roleConfig.knowledgeDomains,
+        roleConfig.module,
+        roleConfig.defaultTools,
+        parsed.body,
+        budget.policy.monthlyBudgetBRL,
+      );
+      validateHireSpec(spec);
+      const created = await paperclipClient.hireAgent(spec);
+      paperclipAgent = {
+        id: created.id,
+        slug: created.slug,
+        name: created.name,
+        role: created.role,
+        status: created.status,
+        createdAt: created.createdAt,
+        updatedAt: created.updatedAt,
+      };
+      log('info', 'hireAgent: instância criada no Paperclip', {
+        slug,
+        paperclipAgentId: created.id,
+        paperclipAgentStatus: created.status,
+      });
+    } catch (err) {
+      if (err instanceof PaperclipClientError) {
+        log('warn', 'hireAgent: Paperclip indisponível, continuando sem instância remota', {
+          slug,
+          code: err.code,
+          reason: err.message,
+        });
+      } else {
+        log('error', 'hireAgent: erro inesperado ao criar instância no Paperclip', {
+          slug,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+      // Não interrompe a contratação: o AgentConfig ainda é válido localmente
+    }
+  }
+
+  const configWithPaperclip: AgentConfig = {
+    ...config,
+    ...(paperclipAgent ? { paperclipAgent } : {}),
+  };
+
   log('info', 'hireAgent: concluído', {
     slug,
-    role: config.role,
-    department: config.nettoscorp.department,
-    clearance: config.nettoscorp.clearance,
-    source: config.source,
-    permissions: config.permissions,
-    installedTools: config.toolProvisioning.installedCount,
-    runtimes: config.toolProvisioning.runtimes,
+    role: configWithPaperclip.role,
+    department: configWithPaperclip.nettoscorp.department,
+    clearance: configWithPaperclip.nettoscorp.clearance,
+    authority: configWithPaperclip.nettoscorp.authority,
+    tools: configWithPaperclip.tools,
+    permissions: configWithPaperclip.permissions,
+    source: configWithPaperclip.source,
+    installedTools: configWithPaperclip.toolProvisioning.installedCount,
+    runtimes: configWithPaperclip.toolProvisioning.runtimes,
+    paperclipAgent: configWithPaperclip.paperclipAgent
+      ? { id: configWithPaperclip.paperclipAgent.id, status: configWithPaperclip.paperclipAgent.status }
+      : undefined,
     budgetPolicy: {
-      policyId: config.budgetPolicy.policyId,
-      monthlyBudgetBRL: config.budgetPolicy.monthlyBudgetBRL,
-      maxExecutionsPerDay: config.budgetPolicy.maxExecutionsPerDay,
-      source: config.budgetPolicy.source,
+      policyId: configWithPaperclip.budgetPolicy.policyId,
+      monthlyBudgetBRL: configWithPaperclip.budgetPolicy.monthlyBudgetBRL,
+      maxExecutionsPerDay: configWithPaperclip.budgetPolicy.maxExecutionsPerDay,
+      source: configWithPaperclip.budgetPolicy.source,
     },
   });
 
-  return config;
+  return configWithPaperclip;
 }
 
 export type { HireOptions } from './types';

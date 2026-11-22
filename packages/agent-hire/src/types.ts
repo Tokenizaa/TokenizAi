@@ -109,6 +109,26 @@ export interface HireOptions {
   dryRun?: boolean;                // true: devolve config sem efeitos colaterais (hireAgent é puro por natureza)
   httpBase?: string;               // base URL opcional para busca remota do agente (fallback HTTP via node-fetch)
   correlationId?: string;          // trace_id para correlação com logs de hireAgent e provisionamento
+  paperclipBaseUrl?: string;       // base URL da API do Paperclip (fallback: PAPERCLIP_API_URL)
+  paperclipApiKey?: string;        // chave de API do Paperclip (fallback: PAPERCLIP_API_KEY)
+  actorId?: string;                // id do usuário autenticado (sub dos claims JWT) para RBAC
+  actorRole?: string;              // papel do usuário para RBAC (recruiter, hiring_manager, etc.)
+  actorCompanyId?: string;         // company_id do usuário para isolamento multi-tenant
+  actorDepartment?: string;        // departamento do usuário para escopo own-department
+}
+
+/**
+ * Resultado da criação da instância no Paperclip (apenas quando hireAgent
+ * consegue se conectar ao Paperclip server real).
+ */
+export interface PaperclipAgentResult {
+  id: string;
+  slug: string;
+  name: string;
+  role: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /** Campos comuns de AgentConfig sem os resultados de provisionamento/binding. */
@@ -128,6 +148,7 @@ export interface AgentConfigBase {
   rawSource: string;
   source: AgentSource;
   hiredAt: string;
+  paperclipAgent?: PaperclipAgentResult; // preenchido quando a instância é criada no Paperclip
 }
 
 /**

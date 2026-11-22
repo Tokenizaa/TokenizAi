@@ -57,8 +57,6 @@ export {
   serializeNettoscorpFrontmatter,
   injectNettoscorpFrontmatter,
   NettoscorpFrontmatterSchema,
-  type NettoscorpFrontmatter,
-  NETTOSCORP_BLOCK_KEY,
 } from './frontmatter-extension';
 
 // (7) tipos de domínio
@@ -66,4 +64,26 @@ export type {
   AgentConfig,
   AgentConfigBase,
   AgentSource,
+  PaperclipAgentResult,
+  NettoscorpFrontmatter,
 } from './types';
+
+// (8) cliente Paperclip — criação de instância operacional
+export {
+  PaperclipClient,
+  PaperclipClientError,
+  buildPaperclipSpec,
+  validateHireSpec,
+  type PaperclipAgentSpec,
+  type PaperclipAgentConfig,
+  type PaperclipAgentResponse,
+} from './paperclip-client';
+
+// (9) autorização RBAC para contratação
+export {
+  authorizeHire,
+  enforceHireAction,
+  type HireContext,
+  type HireAuthorizationDecision,
+  type HireAuditEvent,
+} from './rbac-hire';
