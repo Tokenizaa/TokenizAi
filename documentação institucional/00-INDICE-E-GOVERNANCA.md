@@ -105,8 +105,8 @@ Toda afirmação técnica deve citar a origem:
 
 | Projeto | Checkout Local | Remote | Branch | Commit Analisado |
 |---------|---------------|--------|--------|------------------|
-| **TokenizAi** | `/home/lg/workspace/NettosCorp/TokenizAi` | Tokenizaa/TokenizAi | main | `2988750` |
-| **Agency Agents (fork)** | `/home/lg/workspace/NettosCorp/NettosCorp/enterprise/agency-agents` | Tokenizaa/agency-agents-app | main | `da407fe` (v0.3.2) |
+| **TokenizAi** | `/home/lg/workspace/NettosCorp/TokenizAi` | Tokenizaa/TokenizAi | main | `68e161b` |
+| **Agency Agents (fork)** | `/home/lg/workspace/NettosCorp/NettosCorp/enterprise/agency-agents` | Tokenizaa/agency-agents-app | main | `6d9a355` (v0.3.2) |
 | **Agency Agents (upstream)** | N/A | msitarzewski/agency-agents | main | `8ae6164` |
 | **Paperclip** | `/home/lg/workspace/NettosCorp/NettosCorp/paperclip` | NettosCorp/paperclip | main | `cb64a236b` (v0.3.1) |
 
