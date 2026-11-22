@@ -1,7 +1,7 @@
 # Evidências e Pendências — Auditoria Técnica NettosCorp Enterprise
 
 > **Versão:** 2.1  
-> **Data:** 22 de novembro de 2026  
+> **Data:** 21 de novembro de 2026  
 > **Status:** **FASE 0 IMPLEMENTADA PARCIALMENTE — HOMOLOGAÇÃO CI BLOQUEADA**  
 > **Responsável:** Hermes
 
@@ -196,7 +196,7 @@
 
 | Repositório | Commit | Arquivos-Chave Auditados | Total Linhas Auditadas |
 |-------------|--------|-------------------------|------------------------|
-| **TokenizAi** | `d12f3db` | `server.ts:390`, `App.tsx:475`, `enterpriseService.ts:349`, `enterpriseSeed.ts:883`, `permissions.ts:145`, `enterprise.ts:374`, `server.ts:390` | ~2.500 linhas |
+| **TokenizAi** | `fd5946d` | `server.ts:390`, `App.tsx:475`, `enterpriseService.ts:349`, `enterpriseSeed.ts:883`, `permissions.ts:145`, `enterprise.ts:374`, `server.ts:390` | ~2.500 linhas |
 | **Agency Agents corpus** | `4df4038` (fork) / `8ae6164` (upstream) | `tools.json`, `agency-categories.json`, `convert.sh:954`, `corpus-baseline/` (282 agents), `src-tauri/src/` (Rust) | ~1.500 linhas + 282 agents |
 | **Agency Agents app** | `5757c80` | `package.json`, `src-tauri/Cargo.toml`, `.github/workflows/pr-check.yml` | CI commands wired; execution blocked |
 | **Paperclip** | `cb64a236b` | `server/src/index.ts`, `app.ts:1485`, `ui/src/App.tsx:887`, `packages/db/` (480 tabelas), `packages/adapters/*` (12) | ~3.000 linhas + 480 tabelas |
@@ -207,7 +207,7 @@
 
 *Documento consolidado com evidências reais de auditoria de código. Cada pendência tem evidência rastreável (`arquivo:linha` ou comando de busca). Pendências P0 bloqueiam início da implementação; P1 necessárias para MVP; P2 pós-MVP.*
 
-## 9. Atualização da Fase 0 — 22/11/2026
+## 9. Atualização da Fase 0 — 21/11/2026
 
 ### Commits publicados
 

@@ -3,7 +3,7 @@
 > **Repositório:** Tokenizaa/TokenizAi (main)  
 > **Diretório:** `documentação institucional/`  
 > **Versão:** 2.1  
-> **Data:** 22 de novembro de 2026  
+> **Data:** 21 de novembro de 2026  
 > **Responsável:** Hermes (Chefe de Gabinete Executivo)  
 > **Autoridade:** Netto Farias (Founder, NettosCorp)
 
@@ -108,7 +108,7 @@ Toda afirmação técnica deve citar a origem:
 |---------|---------------|--------|--------|------------------|
 | **TokenizAi** | `/home/lg/workspace/NettosCorp/TokenizAi` | Tokenizaa/TokenizAi | main | `d12f3db` |
 | **Agency Agents (corpus)** | `/home/lg/workspace/NettosCorp/NettosCorp/enterprise/agency-agents` | Tokenizaa/agency-agents | main | `4df4038` |
-| **Agency Agents (desktop app)** | `/home/lg/workspace/NettosCorp/NettosCorp/enterprise/agency-agents-app` | Tokenizaa/agency-agents-app | main | `5757c80` (v0.3.2) |
+| **Agency Agents (desktop app)** | `NÃO VERIFICADO` | Tokenizaa/agency-agents-app | main | `5757c80` (v0.3.2) |
 | **Agency Agents (upstream)** | N/A | msitarzewski/agency-agents | main | `8ae6164` |
 | **Paperclip** | `/home/lg/workspace/NettosCorp/NettosCorp/paperclip` | NettosCorp/paperclip | main | `cb64a236b` (v0.3.1) |
 
@@ -120,7 +120,7 @@ Toda afirmação técnica deve citar a origem:
 |--------|------|-------|---------|
 | 1.0 | 21/11/2026 | Hermes | Criação inicial — consolidação canônica dos 13 documentos |
 | 2.0 | 21/11/2026 | Hermes | Atualização com evidências reais: TokenizAi auditado, Matriz e Documento 12 consolidados |
-| 2.1 | 22/11/2026 | ChatGPT / Conselheiro | Correção da contagem do índice, separação do corpus e desktop app, baseline atual da Fase 0 e status de CI |
+| 2.1 | 21/11/2026 | ChatGPT / Conselheiro | Correção da contagem do índice, separação do corpus e desktop app, baseline atual da Fase 0 e status de CI |
 | 2.1 | 22/11/2026 | ChatGPT / Conselheiro | Reconciliação independente da Fase 0: separação entre repositório do corpus e desktop app, correção do índice (documento 13), referências do orquestrador e estado real do CI |
 
 ---
@@ -129,7 +129,7 @@ Toda afirmação técnica deve citar a origem:
 
 | Repositório | Commit | Status Auditoria | Evidências Principais |
 |-------------|--------|------------------|----------------------|
-| **TokenizAi** | `68e161b` | ✅ **BASELINE v2.0** | React 19 + Express, 17 módulos, RBAC frontend; persistência/auth reais ainda pendentes |
+| **TokenizAi** | `fd5946d` | ✅ **BASELINE v2.0** | React 19 + Express, 17 módulos, RBAC frontend; persistência/auth reais ainda pendentes |
 | **Agency Agents (corpus)** | `4df4038` | 🟡 **FASE 0 — VALIDAÇÃO PENDENTE** | 282 agentes, 18 divisões, builder Hermes, scripts de validação, NEXUS e testes automatizados presentes |
 | **Agency Agents (desktop app)** | `5757c80` | 🟡 **FASE 0 — CI PENDENTE** | Svelte 5 + Tauri/Rust; PR Check inclui cargo fmt/test, npm check e npm build |
 | **Agency Agents (upstream)** | `8ae6164` | 🔴 **NÃO AUDITADO LOCAL** | Fonte canônica: catálogo, scripts, NEXUS strategy |

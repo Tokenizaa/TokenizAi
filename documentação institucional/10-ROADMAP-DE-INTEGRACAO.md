@@ -1,7 +1,7 @@
 # Roadmap de Integração
 
 > **Versão:** 1.1  
-> **Data:** 22 de novembro de 2026  
+> **Data:** 21 de novembro de 2026  
 > **Status:** **EXECUÇÃO AUTORIZADA — Fase 0 em validação; avanço bloqueado até CI verde**  
 > **Base:** Arquitetura Alvo (05) + Modelo de Domínio (06) + Segurança (09)  
 > **Responsável pela execução atual:** Platform / Conselheiro
@@ -43,7 +43,7 @@
 | Confirmar que Antigravity não emite `date_added` e adicionar teste de determinismo | Platform | Parity/determinismo passa em CI |
 | Fix `EvidenceQA` → `testing-evidence-collector` no orchestrator | Platform | Agente referência corrigido no commit `4df4038` |
 
-**Estado de execução (22/11/2026):**
+**Estado de execução (21/11/2026):**
 
 - [x] Builder Hermes e scripts de validação já presentes no fork `Tokenizaa/agency-agents`; nenhum recopy desnecessário do upstream.
 - [x] Pasta `strategy/` presente: estratégia NEXUS, sete playbooks de fase e runbooks de cenário.

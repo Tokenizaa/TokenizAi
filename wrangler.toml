@@ -1,5 +1,5 @@
 # wrangler.toml — NettosCorp Enterprise
-# Cloudflare Pages deployment para enterprise.defesai.com.br
+# Cloudflare Pages deployment para tokenizai.defesai.com.br
 
 name = "tokenizai"
 compatibility_date = "2026-11-21"
