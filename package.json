@@ -13,8 +13,11 @@
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "packages:build": "pnpm --filter @nettoscorp/shared --filter @nettoscorp/db --filter @nettoscorp/auth --filter @nettoscorp/authority-engine --filter @nettoscorp/policy-engine --filter @nettoscorp/kernel --filter @nettoscorp/audit-trail --filter @nettoscorp/compliance-dashboard --filter @nettoscorp/design-tokens --filter @nettoscorp/plugin-sdk --filter @nettoscorp/ui-primitives --filter @nettoscorp/catalog-sync --filter @nettoscorp/agent-hire run build",
-    "packages:check": "pnpm --filter @nettoscorp/shared --filter @nettoscorp/db --filter @nettoscorp/auth --filter @nettoscorp/authority-engine --filter @nettoscorp/policy-engine --filter @nettoscorp/kernel --filter @nettoscorp/audit-trail --filter @nettoscorp/compliance-dashboard --filter @nettoscorp/design-tokens --filter @nettoscorp/plugin-sdk --filter @nettoscorp/ui-primitives --filter @nettoscorp/catalog-sync --filter @nettoscorp/agent-hire run check"
+    "packages:build": "pnpm --filter @nettoscorp/shared --filter @nettoscorp/db --filter @nettoscorp/auth --filter @nettoscorp/authority-engine --filter @nettoscorp/policy-engine --filter @nettoscorp/kernel --filter @nettoscorp/audit-trail --filter @nettoscorp/compliance-dashboard --filter @nettoscorp/design-tokens --filter @nettoscorp/plugin-sdk --filter @nettoscorp/ui-primitives --filter @nettoscorp/catalog-sync --filter @nettoscorp/agent-hire --filter @nettoscorp/backend run build",
+    "packages:check": "pnpm --filter @nettoscorp/shared --filter @nettoscorp/db --filter @nettoscorp/auth --filter @nettoscorp/authority-engine --filter @nettoscorp/policy-engine --filter @nettoscorp/kernel --filter @nettoscorp/audit-trail --filter @nettoscorp/compliance-dashboard --filter @nettoscorp/design-tokens --filter @nettoscorp/plugin-sdk --filter @nettoscorp/ui-primitives --filter @nettoscorp/catalog-sync --filter @nettoscorp/agent-hire --filter @nettoscorp/backend run check",
+    "backend:dev": "pnpm --filter @nettoscorp/backend run dev",
+    "backend:start": "pnpm --filter @nettoscorp/backend run start",
+    "backend:build": "pnpm --filter @nettoscorp/backend run build"
   },
   "dependencies": {
     "@google/genai": "^3.6.1",
@@ -43,6 +46,7 @@
     "@nettoscorp/authority-engine": "workspace:*",
     "@nettoscorp/audit-trail": "workspace:*",
     "@nettoscorp/compliance-dashboard": "workspace:*",
+    "@nettoscorp/backend": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.1",
     "dotenv": "^17.2.3",

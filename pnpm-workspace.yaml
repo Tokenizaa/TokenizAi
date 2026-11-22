@@ -3,6 +3,8 @@ packages:
   - 'packages/*'
   - 'packages/adapters/*'
   - 'packages/mcp-*'
+  # Backend central
+  - 'backend'
   # Paperclip Platform (27 packages)
   - 'paperclip/packages/*'
   - 'paperclip/packages/adapters/*'
@@ -18,6 +20,7 @@ allowBuilds:
   - '@nettoscorp/audit-trail'
   - '@nettoscorp/compliance-dashboard'
   - '@nettoscorp/agent-hire'
+  - '@nettoscorp/backend'
   - '@nettoscorp/design-tokens'
   - '@nettoscorp/plugin-sdk'
   - '@nettoscorp/ui-primitives'
