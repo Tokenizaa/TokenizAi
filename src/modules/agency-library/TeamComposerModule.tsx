@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Check, CheckCircle2, Info, Sparkles } from 'lucide-react';
+import { Check, CheckCircle2, Info, Layers, Sparkles } from 'lucide-react';
 import {
   AGENCY_AGENTS_283,
   analyzeProjectNeedsDeterministically,
   computeTeamCoverageAndGaps,
+  NEXUS_PRESET_TEAMS,
 } from '../../domain/agencyLibrary';
 import { ROLE_DEFINITIONS } from '../../domain/permissions';
 import { AIAdapter } from '../../services/adapters';
@@ -41,13 +42,11 @@ export const TeamComposerModule: React.FC<TeamComposerModuleProps> = ({
 
   const canEdit = ROLE_DEFINITIONS[activeRole].canEditProjects;
 
-  // 1. Deterministic matching (explicitly labeled as deterministic rules)
   const deterministicRecs = useMemo(() => {
     if (!selectedProject) return [];
     return analyzeProjectNeedsDeterministically(selectedProject, AGENCY_AGENTS_283, 10);
   }, [selectedProject]);
 
-  // 2. Coverage & Gap calculation
   const coverage = useMemo(() => {
     if (!selectedProject) return null;
     return computeTeamCoverageAndGaps(selectedProject, selectedIds, AGENCY_AGENTS_283);
@@ -56,6 +55,15 @@ export const TeamComposerModule: React.FC<TeamComposerModuleProps> = ({
   const toggleAgent = (id: string) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const applyPresetTeam = (agentCodes: string[], presetName: string) => {
+    const matchedIds = AGENCY_AGENTS_283.filter((a) => agentCodes.includes(a.code)).map((a) => a.id);
+    if (matchedIds.length === 0) return;
+    setSelectedIds(matchedIds);
+    setSavedNotice(
+      `Preset "${presetName}" carregado (${matchedIds.length} perfis). Revise lacunas e confirme a decisão humana.`
     );
   };
 
@@ -105,7 +113,7 @@ export const TeamComposerModule: React.FC<TeamComposerModuleProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Contextual Project Selector */}
       <div className="p-5 rounded-xl border border-line bg-surface flex flex-wrap items-center justify-between gap-4">
         <div className="space-y-1 flex-1 min-w-[240px]">
@@ -136,7 +144,40 @@ export const TeamComposerModule: React.FC<TeamComposerModuleProps> = ({
         </button>
       </div>
 
-      {/* Transparency Banner: Deterministic vs AI vs Human */}
+      {/* NEXUS Preset Teams Strip */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Layers className="w-4 h-4 text-accent" />
+          <h3 className="text-sm font-semibold text-ink">
+            Equipes Pré-Configuradas NEXUS (Presets Agency Agents)
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {NEXUS_PRESET_TEAMS.map((preset) => (
+            <div key={preset.id} className="p-4 rounded-xl border border-line bg-surface flex flex-col justify-between gap-3">
+              <div className="space-y-1.5">
+                <p className="font-mono text-[11px] text-accent">
+                  {preset.agentCodes.join(' · ')}
+                </p>
+                <h4 className="font-display text-sm font-bold text-ink">{preset.name}</h4>
+                <p className="text-xs text-ink-muted">{preset.description}</p>
+                <p className="text-[11px] text-ink-subtle">
+                  Fluxo NEXUS: {preset.nexusWorkflow.join(' → ')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => applyPresetTeam(preset.agentCodes, preset.name)}
+                className="w-full py-1.5 px-3 rounded-lg border border-line bg-canvas hover:border-accent text-xs font-semibold text-ink cursor-pointer"
+              >
+                Carregar Preset ({preset.agentCodes.length} perfis)
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Transparency Banner */}
       <div className="px-4 py-2.5 rounded-lg border border-line bg-surface-subtle/60 flex items-center gap-2 text-xs text-ink-muted">
         <Info className="w-4 h-4 text-accent shrink-0" />
         <span>
@@ -158,7 +199,6 @@ export const TeamComposerModule: React.FC<TeamComposerModuleProps> = ({
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left: Deterministic Recommendations */}
         <section className="lg:col-span-7 p-5 rounded-xl border border-line bg-surface space-y-4">
           <div>
             <h3 className="text-sm font-semibold text-ink">
@@ -178,6 +218,7 @@ export const TeamComposerModule: React.FC<TeamComposerModuleProps> = ({
                 <div key={rec.agent.id} className="py-3 first:pt-0 last:pb-0 flex items-start justify-between gap-4">
                   <div className="min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center gap-2 text-xs text-ink-subtle">
+                      <span>{rec.agent.emoji}</span>
                       <span className="font-mono font-semibold text-ink">{rec.agent.code}</span>
                       <span>·</span>
                       <span>{rec.agent.division}</span>
@@ -210,7 +251,6 @@ export const TeamComposerModule: React.FC<TeamComposerModuleProps> = ({
           </div>
         </section>
 
-        {/* Right: Gap Analysis + Human Decision */}
         <aside className="lg:col-span-5 p-5 rounded-xl border border-line bg-surface space-y-5 sticky top-20">
           <div className="space-y-1">
             <p className="text-xs text-ink-subtle">Cobertura Calculada da Equipe</p>

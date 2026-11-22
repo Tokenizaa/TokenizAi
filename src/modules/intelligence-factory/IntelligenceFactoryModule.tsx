@@ -18,7 +18,7 @@ export const IntelligenceFactoryModule: React.FC<IntelligenceFactoryModuleProps>
   ).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <DataOriginNotice
         sourceLabel="Operação de construção, avaliação (evals) e homologação de soluções de IA"
         pendingIntegration="Paperclip Runtime & Telemetria de Modelos"

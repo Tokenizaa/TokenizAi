@@ -1,4 +1,20 @@
-import type { CalendarCommitment } from '../types/enterprise';
+import type {
+  AgentExecutionSession,
+  CalendarCommitment,
+  ChatConversation,
+  ChatMessage,
+  DepartmentRecord,
+  EnterpriseProject,
+  EnterpriseState,
+  FinancialEntry,
+  GovernanceRecord,
+  HomologationStatus,
+  OperationalAgentInstance,
+  OrgPosition,
+  ProjectTask,
+  TeamCompositionRecord,
+  UserRole,
+} from '../types/enterprise';
 
 export interface GitHubRepoInspection {
   fullName: string;
@@ -42,6 +58,266 @@ export interface ServerHealthStatus {
     githubToken: boolean;
   };
 }
+
+async function apiRequest<T>(
+  url: string,
+  role: UserRole,
+  options: RequestInit = {}
+): Promise<T> {
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-NettosCorp-Role': role,
+      ...(options.headers ?? {}),
+    },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error((data as { error?: string }).error || `Erro na requisição (${res.status}).`);
+  }
+  return data as T;
+}
+
+export const EnterpriseApiAdapter = {
+  bootstrap(role: UserRole): Promise<{ state: EnterpriseState; role: UserRole }> {
+    return apiRequest('/api/bootstrap', role);
+  },
+
+  resetState(role: UserRole): Promise<{ ok: boolean; state: EnterpriseState }> {
+    return apiRequest('/api/state/reset', role, { method: 'POST' });
+  },
+
+  createConversation(
+    role: UserRole,
+    input: {
+      kind: ChatConversation['kind'];
+      title: string;
+      subtitle?: string;
+      participantIds: string[];
+      projectId?: string;
+      departmentId?: string;
+      contextRef?: ChatConversation['contextRef'];
+    }
+  ): Promise<{ conversation: ChatConversation }> {
+    return apiRequest('/api/chat/conversations', role, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  sendMessage(
+    role: UserRole,
+    input: {
+      conversationId: string;
+      content: string;
+      targetInstanceId?: string;
+      contextRef?: ChatMessage['contextRef'];
+    }
+  ): Promise<{ userMessage: ChatMessage; agentMessage: ChatMessage | null; session?: AgentExecutionSession }> {
+    return apiRequest('/api/chat/messages', role, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  orchestrateInterAgent(
+    role: UserRole,
+    input: {
+      sourceInstanceId: string;
+      targetInstanceId: string;
+      topic: string;
+      projectId?: string;
+    }
+  ): Promise<{ conversation: ChatConversation; messages: ChatMessage[] }> {
+    return apiRequest('/api/chat/inter-agent', role, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  convertMessageToTask(
+    role: UserRole,
+    messageId: string,
+    input: {
+      projectId?: string;
+      title?: string;
+      assigneeId?: string;
+      assigneeKind?: 'humano' | 'agente_operacional';
+      assigneeName?: string;
+      dueDate?: string;
+      completionCriteria?: string;
+    }
+  ): Promise<{ task: ProjectTask }> {
+    return apiRequest(`/api/chat/messages/${messageId}/convert-task`, role, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  createDepartment(
+    role: UserRole,
+    input: { code: string; name: string; description: string; budgetAllocatedBRL: number }
+  ): Promise<{ department: DepartmentRecord }> {
+    return apiRequest('/api/org/departments', role, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  createOrgPosition(
+    role: UserRole,
+    input: Partial<OrgPosition>
+  ): Promise<{ position: OrgPosition }> {
+    return apiRequest('/api/org/positions', role, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  updateOrgPosition(
+    role: UserRole,
+    positionId: string,
+    patch: Partial<OrgPosition>
+  ): Promise<{ position: OrgPosition }> {
+    return apiRequest(`/api/org/positions/${positionId}`, role, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
+  },
+
+  createTask(role: UserRole, input: Partial<ProjectTask>): Promise<{ task: ProjectTask }> {
+    return apiRequest('/api/tasks', role, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  updateTask(role: UserRole, taskId: string, patch: Partial<ProjectTask>): Promise<{ task: ProjectTask }> {
+    return apiRequest(`/api/tasks/${taskId}`, role, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
+  },
+
+  createRuntimeInstance(
+    role: UserRole,
+    input: {
+      blueprintId: string;
+      projectId: string;
+      positionId?: string;
+      guardrailPolicy?: string;
+      provider?: OperationalAgentInstance['provider'];
+      model?: string;
+      adapter?: OperationalAgentInstance['adapter'];
+      monthlyBudgetBRL?: number;
+      tools?: string[];
+    }
+  ): Promise<{ instance: OperationalAgentInstance }> {
+    return apiRequest('/api/runtime/agents', role, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  updateRuntimeInstance(
+    role: UserRole,
+    instanceId: string,
+    patch: Partial<OperationalAgentInstance>
+  ): Promise<{ instance: OperationalAgentInstance }> {
+    return apiRequest(`/api/runtime/agents/${instanceId}`, role, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
+  },
+
+  triggerHeartbeat(
+    role: UserRole,
+    instanceId: string
+  ): Promise<{ instance: OperationalAgentInstance; session: AgentExecutionSession }> {
+    return apiRequest(`/api/runtime/agents/${instanceId}/heartbeat`, role, {
+      method: 'POST',
+    });
+  },
+
+  createProject(
+    role: UserRole,
+    input: Omit<EnterpriseProject, 'id' | 'code' | 'updatedAt'>
+  ): Promise<{ project: EnterpriseProject }> {
+    return apiRequest('/api/projects', role, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  toggleNexusGate(
+    role: UserRole,
+    projectId: string,
+    gateId: string,
+    passed: boolean
+  ): Promise<{ project: EnterpriseProject }> {
+    return apiRequest(`/api/projects/${projectId}/nexus-gates/${gateId}`, role, {
+      method: 'PATCH',
+      body: JSON.stringify({ passed }),
+    });
+  },
+
+  addFinancialEntry(
+    role: UserRole,
+    entry: Omit<FinancialEntry, 'id' | 'origin'>
+  ): Promise<{ entry: FinancialEntry }> {
+    return apiRequest('/api/finance/entries', role, {
+      method: 'POST',
+      body: JSON.stringify(entry),
+    });
+  },
+
+  setHomologation(
+    role: UserRole,
+    agentId: string,
+    status: HomologationStatus
+  ): Promise<{ agentId: string; status: HomologationStatus }> {
+    return apiRequest('/api/agency/homologation', role, {
+      method: 'POST',
+      body: JSON.stringify({ agentId, status }),
+    });
+  },
+
+  saveTeamComposition(
+    role: UserRole,
+    composition: Omit<TeamCompositionRecord, 'id' | 'createdAt'>
+  ): Promise<{ composition: TeamCompositionRecord }> {
+    return apiRequest('/api/agency/compositions', role, {
+      method: 'POST',
+      body: JSON.stringify(composition),
+    });
+  },
+
+  createGovernanceRecord(
+    role: UserRole,
+    input: {
+      type: 'DEC' | 'CNS' | 'DELIB';
+      title: string;
+      summary: string;
+      linkedProjectId?: string;
+      linkedConversationId?: string;
+    }
+  ): Promise<{ record: GovernanceRecord }> {
+    return apiRequest('/api/governance', role, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  approveGovernanceRecord(
+    role: UserRole,
+    recordId: string
+  ): Promise<{ record: GovernanceRecord }> {
+    return apiRequest(`/api/governance/${recordId}/approve`, role, {
+      method: 'POST',
+    });
+  },
+};
 
 export const GitHubAdapter = {
   async inspectRepo(repoInput: string): Promise<GitHubRepoInspection> {
@@ -93,6 +369,7 @@ export const AIAdapter = {
   async parseVoiceIntent(transcript: string): Promise<{
     action: string;
     moduleId?: string;
+    projectId?: string;
     query?: string;
     explanation: string;
   }> {
@@ -106,6 +383,86 @@ export const AIAdapter = {
       throw new Error(data.error || 'Erro ao interpretar comando de voz.');
     }
     return data.intent;
+  },
+
+  async streamChatbotTurn(
+    role: UserRole,
+    input: {
+      message: string;
+      history: Array<{ role: 'user' | 'model'; text: string }>;
+      personaId: string;
+      customSystemInstruction?: string;
+      speedMode: 'balanced' | 'fast';
+      activeModule: string;
+      onChunk: (delta: string) => void;
+    }
+  ): Promise<{ text: string; model: string }> {
+    const res = await fetch('/api/ai/chatbot', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-nettoscorp-role': role,
+      },
+      body: JSON.stringify({
+        message: input.message,
+        history: input.history,
+        personaId: input.personaId,
+        customSystemInstruction: input.customSystemInstruction,
+        speedMode: input.speedMode,
+        activeModule: input.activeModule,
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error || 'Erro ao consultar o chatbot Gemini.');
+    }
+
+    if (!res.body) {
+      throw new Error('Streaming indisponível na resposta do servidor.');
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    let fullText = '';
+    let resolvedModel = input.speedMode === 'fast' ? 'gemini-3.1-flash-lite' : 'gemini-4-hydrogen';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const events = buffer.split('\n\n');
+      buffer = events.pop() ?? '';
+
+      for (const block of events) {
+        const line = block
+          .split('\n')
+          .find((l) => l.startsWith('data: '));
+        if (!line) continue;
+        const jsonStr = line.slice(6).trim();
+        if (!jsonStr) continue;
+        const parsed = JSON.parse(jsonStr) as {
+          chunk?: string;
+          done?: boolean;
+          model?: string;
+          error?: string;
+        };
+        if (parsed.error) {
+          throw new Error(parsed.error);
+        }
+        if (parsed.chunk) {
+          fullText += parsed.chunk;
+          input.onChunk(parsed.chunk);
+        }
+        if (parsed.model) {
+          resolvedModel = parsed.model;
+        }
+      }
+    }
+
+    return { text: fullText, model: resolvedModel };
   },
 };
 

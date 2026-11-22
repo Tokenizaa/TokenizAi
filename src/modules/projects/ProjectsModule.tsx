@@ -1,16 +1,32 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, Check, CheckCircle2, GitBranch, Plus, Sparkles, X } from 'lucide-react';
+import {
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  GitBranch,
+  MessageSquare,
+  Plus,
+  ShieldCheck,
+  Sparkles,
+  X,
+} from 'lucide-react';
 import { DataOriginNotice } from '../../components/Common/DataOriginNotice';
 import { AGENCY_AGENTS_283, analyzeProjectNeedsDeterministically } from '../../domain/agencyLibrary';
 import { ROLE_DEFINITIONS } from '../../domain/permissions';
-import { AIAdapter, GitHubAdapter, type GitHubRepoInspection, type ProjectAIScopingResult } from '../../services/adapters';
-import { formatDateBR } from '../../services/enterpriseService';
+import {
+  AIAdapter,
+  GitHubAdapter,
+  type GitHubRepoInspection,
+  type ProjectAIScopingResult,
+} from '../../services/adapters';
+import { formatBRL, formatDateBR } from '../../services/enterpriseService';
 import type {
   EnterpriseProject,
   EnterpriseState,
   ModuleId,
   ProjectStatus,
   ProjectTask,
+  TaskLifecycleStatus,
   UserRole,
 } from '../../types/enterprise';
 
@@ -18,24 +34,49 @@ interface ProjectsModuleProps {
   state: EnterpriseState;
   activeRole: UserRole;
   openWizardInitially?: boolean;
+  initialSelectedProjectId?: string;
   onWizardOpenedHandled?: () => void;
-  onCreateProject: (input: Omit<EnterpriseProject, 'id' | 'code' | 'updatedAt'>) => void;
-  onToggleTaskStatus: (taskId: string, nextStatus: ProjectTask['status']) => void;
+  onCreateProject: (input: Omit<EnterpriseProject, 'id' | 'code' | 'updatedAt'>) => Promise<void>;
+  onUpdateTask: (taskId: string, patch: Partial<ProjectTask>) => Promise<void>;
+  onToggleNexusGate: (projectId: string, gateId: string, passed: boolean) => Promise<void>;
+  onOpenChat: (target: { conversationId?: string; projectId?: string }) => void;
   onNavigate: (moduleId: ModuleId, extra?: { projectId?: string }) => void;
 }
+
+const TASK_STATUS_OPTIONS: Array<{ id: TaskLifecycleStatus; label: string }> = [
+  { id: 'planejada', label: 'Planejada' },
+  { id: 'atribuida', label: 'Atribuída' },
+  { id: 'em_execucao', label: 'Em Execução' },
+  { id: 'bloqueada', label: 'Bloqueada' },
+  { id: 'em_revisao', label: 'Em Revisão' },
+  { id: 'concluida', label: 'Concluída' },
+  { id: 'cancelada', label: 'Cancelada' },
+];
 
 export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
   state,
   activeRole,
   openWizardInitially,
+  initialSelectedProjectId,
   onWizardOpenedHandled,
   onCreateProject,
-  onToggleTaskStatus,
+  onUpdateTask,
+  onToggleNexusGate,
+  onOpenChat,
   onNavigate,
 }) => {
   const [statusFilter, setStatusFilter] = useState<'todos' | ProjectStatus>('todos');
-  const [selectedProjectId, setSelectedProjectId] = useState<string>(state.projects[0]?.id ?? '');
-  const [detailTab, setDetailTab] = useState<'overview' | 'tasks' | 'team' | 'governance'>('overview');
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(
+    initialSelectedProjectId || state.projects[0]?.id || ''
+  );
+  const [detailTab, setDetailTab] = useState<
+    'overview' | 'tasks' | 'nexus' | 'team' | 'governance'
+  >('overview');
+
+  // Evidence modal when completing task
+  const [closingTask, setClosingTask] = useState<ProjectTask | null>(null);
+  const [evidenceInput, setEvidenceInput] = useState('');
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Smart Project Creation Wizard state
   const [wizardOpen, setWizardOpen] = useState(Boolean(openWizardInitially));
@@ -46,11 +87,11 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
   const [aiResult, setAiResult] = useState<ProjectAIScopingResult | null>(null);
   const [analysisNote, setAnalysisNote] = useState<string | null>(null);
 
-  // Confirmable fields (Step 2 of Smart Wizard)
   const [draftName, setDraftName] = useState('');
   const [draftObjective, setDraftObjective] = useState('');
   const [draftArea, setDraftArea] = useState('Engenharia de Software');
   const [draftDeadline, setDraftDeadline] = useState('2027-01-30');
+  const [draftBudget, setDraftBudget] = useState(120000);
   const [draftRequirements, setDraftRequirements] = useState<string[]>([]);
   const [draftAgentIds, setDraftAgentIds] = useState<string[]>([]);
   const [stepReady, setStepReady] = useState(false);
@@ -61,6 +102,12 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
       onWizardOpenedHandled?.();
     }
   }, [openWizardInitially, onWizardOpenedHandled]);
+
+  React.useEffect(() => {
+    if (initialSelectedProjectId) {
+      setSelectedProjectId(initialSelectedProjectId);
+    }
+  }, [initialSelectedProjectId]);
 
   const canEdit = ROLE_DEFINITIONS[activeRole].canEditProjects;
 
@@ -95,13 +142,14 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
       setRepoInspection(null);
     }
 
-    // Try Gemini server-side scoping; if unavailable, transparently fall back to deterministic analysis
     let scoped: ProjectAIScopingResult | null = null;
     try {
       const res = await AIAdapter.scopeProject(briefInput.trim(), inspected);
       scoped = res.analysis;
       setAiResult(scoped);
-      setAnalysisNote(`Contexto analisado via ${res.model}${inspected ? ' + GitHub API real' : ''}. Confirme apenas os campos abaixo.`);
+      setAnalysisNote(
+        `Contexto analisado via ${res.model}${inspected ? ' + GitHub API real' : ''}. Confirme apenas os campos abaixo.`
+      );
     } catch {
       const titleFallback = inspected
         ? inspected.fullName.split('/')[1]
@@ -114,17 +162,24 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
 
       scoped = {
         suggestedTitle: titleFallback || 'Nova Iniciativa NettosCorp',
-        objective: briefInput.trim() || inspected?.description || 'Estruturar entrega corporativa a partir do repositório.',
+        objective:
+          briefInput.trim() ||
+          inspected?.description ||
+          'Estruturar entrega corporativa a partir do repositório.',
         area: areaFallback,
         detectedArchitecture: inspected
           ? `${inspected.primaryLanguage} (${inspected.languages.join(', ') || 'Stack detectada'})`
           : 'A definir durante confirmação de escopo',
         keyRequirements: [
-          briefInput.trim() ? `Entregar: ${briefInput.trim().slice(0, 90)}` : 'Mapear backlog inicial a partir do repositório',
+          briefInput.trim()
+            ? `Entregar: ${briefInput.trim().slice(0, 90)}`
+            : 'Mapear backlog inicial a partir do repositório',
           'Validar segurança RBAC e critérios de qualidade antes de produção',
         ],
         recommendedCompetencies: inspected?.languages ?? ['TypeScript', 'Arquitetura', 'QA'],
-        risks: ['Gemini API não configurada no servidor — classificação executada pelo motor determinístico local.'],
+        risks: [
+          'Gemini API não configurada no servidor — classificação executada pelo motor determinístico local.',
+        ],
         questionsToConfirm: ['Confirmar prazo alvo de entrega e responsável principal.'],
       };
       setAiResult(scoped);
@@ -138,7 +193,6 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
     setDraftArea(scoped.area);
     setDraftRequirements(scoped.keyRequirements);
 
-    // Deterministic matching from 283-agent catalog
     const tempProject: EnterpriseProject = {
       id: 'draft',
       code: 'NEW',
@@ -167,16 +221,18 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
     setAnalyzing(false);
   };
 
-  const handleConfirmCreate = (e: React.FormEvent) => {
+  const handleConfirmCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!draftName.trim() || !draftObjective.trim()) return;
-    onCreateProject({
+    await onCreateProject({
       name: draftName.trim(),
       objective: draftObjective.trim(),
       description: briefInput.trim() || draftObjective.trim(),
       area: draftArea,
       leadId: state.people[1]?.id ?? 'per-2',
       leadName: state.people[1]?.name ?? 'Clara Azevedo',
+      budgetBRL: Number(draftBudget) || 100000,
+      spentBRL: 0,
       humanTeamIds: [state.people[1]?.id ?? 'per-2'],
       selectedAgentIds: draftAgentIds,
       operationalInstanceIds: [],
@@ -187,7 +243,7 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
       repoSlug: repoInspection?.fullName || (repoInput.trim() ? repoInput.trim() : undefined),
       architectureSummary: aiResult?.detectedArchitecture,
       requirements: draftRequirements,
-      origin: 'demonstrativo',
+      origin: 'real_local',
     });
     setWizardOpen(false);
     setStepReady(false);
@@ -195,6 +251,35 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
     setRepoInput('');
     setRepoInspection(null);
     setAiResult(null);
+  };
+
+  const handleTaskStatusSelect = async (task: ProjectTask, nextStatus: TaskLifecycleStatus) => {
+    setActionError(null);
+    if (nextStatus === 'concluida' && !task.completionEvidence?.trim()) {
+      setClosingTask(task);
+      setEvidenceInput('');
+      return;
+    }
+    try {
+      await onUpdateTask(task.id, { status: nextStatus });
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Erro ao atualizar tarefa.');
+    }
+  };
+
+  const handleConfirmEvidence = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!closingTask || !evidenceInput.trim()) return;
+    try {
+      await onUpdateTask(closingTask.id, {
+        status: 'concluida',
+        completionEvidence: evidenceInput.trim(),
+      });
+      setClosingTask(null);
+      setEvidenceInput('');
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Erro ao concluir tarefa.');
+    }
   };
 
   const projectTasks = selectedProject
@@ -206,14 +291,26 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
   const projectGovernance = selectedProject
     ? state.governance.filter((g) => g.linkedProjectId === selectedProject.id)
     : [];
+  const projectInstances = selectedProject
+    ? state.operationalInstances.filter((o) => o.projectId === selectedProject.id)
+    : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <DataOriginNotice
-        sourceLabel="Portfólio unificado de projetos empresariais (software, IA, operações e governança)"
+        sourceLabel="Portfólio unificado de projetos empresariais, quality gates NEXUS, orçamento e canais de execução"
         pendingIntegration="GitHub Webhooks & Paperclip Runtime"
         onConfigureIntegration={(m) => onNavigate(m)}
       />
+
+      {actionError && (
+        <div className="px-4 py-2.5 rounded-lg border border-red-500/30 bg-red-500/10 text-xs text-red-700 dark:text-red-300 flex items-center justify-between gap-2">
+          <span>{actionError}</span>
+          <button type="button" onClick={() => setActionError(null)} className="underline cursor-pointer">
+            Dispensar
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1 p-1 rounded-lg bg-surface-subtle border border-line overflow-x-auto">
@@ -251,7 +348,7 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
         )}
       </div>
 
-      {/* Smart Project Creation Drawer/Modal */}
+      {/* Smart Project Creation Wizard */}
       {wizardOpen && (
         <div className="p-6 rounded-2xl nc-glass-window space-y-5">
           <div className="flex items-start justify-between gap-4">
@@ -303,9 +400,9 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
                 type="button"
                 onClick={handleAnalyzeContext}
                 disabled={analyzing}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-900 dark:bg-slate-800 text-white text-xs font-semibold hover:opacity-90 cursor-pointer disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-semibold cursor-pointer disabled:opacity-60"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <Sparkles className="w-3.5 h-3.5" />
                 {analyzing ? 'Analisando contexto...' : 'Analisar Contexto & Sugerir Equipe'}
               </button>
             </div>
@@ -331,7 +428,7 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
 
           {stepReady && aiResult && (
             <form onSubmit={handleConfirmCreate} className="pt-4 border-t border-line space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium text-ink-muted mb-1">Nome do Projeto</label>
                   <input
@@ -343,11 +440,20 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-ink-muted mb-1">Prazo Alvo (Confirmação)</label>
+                  <label className="block text-xs font-medium text-ink-muted mb-1">Prazo Alvo</label>
                   <input
                     type="date"
                     value={draftDeadline}
                     onChange={(e) => setDraftDeadline(e.target.value)}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-line bg-surface text-ink font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-ink-muted mb-1">Orçamento (R$)</label>
+                  <input
+                    type="number"
+                    value={draftBudget}
+                    onChange={(e) => setDraftBudget(Number(e.target.value))}
                     className="w-full px-3 py-2 text-sm rounded-lg border border-line bg-surface text-ink font-mono"
                   />
                 </div>
@@ -422,7 +528,7 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
         </div>
       )}
 
-      {/* Portfolio Split: Project List + Contextual Inspector */}
+      {/* Portfolio Split */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <div className="lg:col-span-5 space-y-2.5">
           {filteredProjects.map((proj) => {
@@ -454,7 +560,9 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
                 <p className="mt-1 text-xs text-ink-muted line-clamp-2">{proj.objective}</p>
                 <div className="mt-3 flex items-center justify-between text-xs text-ink-subtle tabular-nums">
                   <span>{proj.area}</span>
-                  <span className="font-mono">{proj.progress}% · {formatDateBR(proj.deadline)}</span>
+                  <span className="font-mono">
+                    {proj.progress}% · {formatDateBR(proj.deadline)}
+                  </span>
                 </div>
               </button>
             );
@@ -473,15 +581,37 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
                   <span>Líder: {selectedProject.leadName}</span>
                 </div>
                 <h2 className="mt-1 font-display text-lg font-bold text-ink">{selectedProject.name}</h2>
+                {selectedProject.budgetBRL !== undefined && (
+                  <p className="text-xs text-ink-muted tabular-nums mt-1">
+                    Orçamento: {formatBRL(selectedProject.spentBRL ?? 0)} executado de{' '}
+                    {formatBRL(selectedProject.budgetBRL)}
+                  </p>
+                )}
               </div>
-              <button
-                type="button"
-                onClick={() => onNavigate('team-composer', { projectId: selectedProject.id })}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line bg-surface-subtle hover:border-accent text-xs font-semibold text-ink cursor-pointer"
-              >
-                Compor Equipe IA
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    onOpenChat({
+                      conversationId: selectedProject.linkedConversationId,
+                      projectId: selectedProject.id,
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line bg-canvas hover:border-accent text-xs font-semibold text-ink cursor-pointer"
+                >
+                  <MessageSquare className="w-3.5 h-3.5 text-accent" />
+                  Canal do Projeto
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigate('team-composer', { projectId: selectedProject.id })}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line bg-surface-subtle hover:border-accent text-xs font-semibold text-ink cursor-pointer"
+                >
+                  Compor Equipe IA
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center gap-4 border-b border-line text-xs overflow-x-auto">
@@ -489,7 +619,8 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
                 [
                   { id: 'overview', label: 'Visão Geral & Arquitetura' },
                   { id: 'tasks', label: `Tarefas (${projectTasks.length})` },
-                  { id: 'team', label: `Equipe & Agentes (${projectAgents.length})` },
+                  { id: 'nexus', label: `Gates NEXUS (${selectedProject.nexusGates?.length ?? 0})` },
+                  { id: 'team', label: `Equipe & Runtime (${projectAgents.length})` },
                   { id: 'governance', label: `Governança (${projectGovernance.length})` },
                 ] as const
               ).map((t) => (
@@ -517,7 +648,9 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
                 {selectedProject.architectureSummary && (
                   <div>
                     <p className="text-xs font-semibold text-ink-subtle">Arquitetura & Stack</p>
-                    <p className="mt-1 text-xs font-mono text-ink-muted">{selectedProject.architectureSummary}</p>
+                    <p className="mt-1 text-xs font-mono text-ink-muted">
+                      {selectedProject.architectureSummary}
+                    </p>
                   </div>
                 )}
                 {selectedProject.repoSlug && (
@@ -538,34 +671,97 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
             )}
 
             {detailTab === 'tasks' && (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {projectTasks.length === 0 ? (
-                  <p className="text-xs text-ink-subtle py-4">Nenhuma tarefa registrada para este projeto ainda.</p>
+                  <p className="text-xs text-ink-subtle py-4">
+                    Nenhuma tarefa registrada para este projeto ainda.
+                  </p>
                 ) : (
                   projectTasks.map((tsk) => (
                     <div
                       key={tsk.id}
-                      className="flex items-center justify-between gap-3 p-3 rounded-lg border border-line bg-canvas"
+                      className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg border border-line bg-canvas"
                     >
-                      <div className="min-w-0">
+                      <div className="min-w-0 space-y-0.5">
                         <p className="text-sm font-medium text-ink">{tsk.title}</p>
                         <p className="text-xs text-ink-subtle">
-                          {tsk.assigneeName} · {tsk.assigneeKind === 'humano' ? 'Humano' : 'Agente Operacional'} ·{' '}
+                          {tsk.assigneeName} ·{' '}
+                          {tsk.assigneeKind === 'humano' ? 'Humano' : 'Agente Operacional'} ·{' '}
                           <span className="font-mono tabular-nums">{formatDateBR(tsk.dueDate)}</span>
                         </p>
+                        {tsk.completionEvidence && (
+                          <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                            Evidência: {tsk.completionEvidence}
+                          </p>
+                        )}
                       </div>
                       <select
                         value={tsk.status}
-                        onChange={(e) => onToggleTaskStatus(tsk.id, e.target.value as ProjectTask['status'])}
+                        onChange={(e) =>
+                          void handleTaskStatusSelect(tsk, e.target.value as TaskLifecycleStatus)
+                        }
                         className="px-2 py-1 text-xs rounded-md border border-line bg-surface text-ink"
                       >
-                        <option value="pendente">Pendente</option>
-                        <option value="em_progresso">Em Progresso</option>
-                        <option value="revisao">Revisão</option>
-                        <option value="concluida">Concluída</option>
+                        {TASK_STATUS_OPTIONS.map((opt) => (
+                          <option key={opt.id} value={opt.id}>
+                            {opt.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   ))
+                )}
+              </div>
+            )}
+
+            {detailTab === 'nexus' && (
+              <div className="space-y-3">
+                <p className="text-xs text-ink-muted">
+                  Portões de qualidade NEXUS (Discovery → Architecture → Execution → Verification → Release) com verificação humana explícita.
+                </p>
+                {!selectedProject.nexusGates?.length ? (
+                  <p className="text-xs text-ink-subtle py-4">
+                    Nenhum gate NEXUS configurado para este projeto.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {selectedProject.nexusGates.map((gate) => (
+                      <div
+                        key={gate.id}
+                        className="p-3.5 rounded-lg border border-line bg-canvas flex items-center justify-between gap-3"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 text-xs">
+                            <ShieldCheck
+                              className={`w-3.5 h-3.5 ${
+                                gate.passed ? 'text-emerald-600' : 'text-ink-subtle'
+                              }`}
+                            />
+                            <span className="font-mono font-semibold text-ink">{gate.phase}</span>
+                            {gate.verifiedBy && (
+                              <span className="text-ink-subtle">· Validado por {gate.verifiedBy}</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-ink-muted mt-0.5">{gate.gateCriteria}</p>
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={!canEdit}
+                          onClick={() =>
+                            void onToggleNexusGate(selectedProject.id, gate.id, !gate.passed)
+                          }
+                          className={`px-3 py-1 rounded-md border text-xs font-semibold shrink-0 cursor-pointer disabled:opacity-50 ${
+                            gate.passed
+                              ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                              : 'border-line bg-surface text-ink-muted hover:text-ink'
+                          }`}
+                        >
+                          {gate.passed ? 'Aprovado' : 'Aprovar Gate'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
@@ -586,19 +782,49 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
                   </div>
                 </div>
 
+                {projectInstances.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-ink-subtle mb-2">
+                      Instâncias Operacionais Ativas ({projectInstances.length})
+                    </p>
+                    <div className="space-y-2">
+                      {projectInstances.map((inst) => (
+                        <div
+                          key={inst.id}
+                          className="flex items-center justify-between p-2.5 rounded-lg border border-line bg-canvas text-xs"
+                        >
+                          <div>
+                            <span className="font-mono font-semibold text-ink">{inst.instanceName}</span>
+                            <span className="text-ink-subtle ml-2">
+                              ({inst.blueprintCode} · {inst.executionState.replace(/_/g, ' ')})
+                            </span>
+                          </div>
+                          <span className="font-mono tabular-nums text-ink-muted">
+                            {formatBRL(inst.spentBudgetBRL)} / {formatBRL(inst.monthlyBudgetBRL)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <p className="text-xs font-semibold text-ink-subtle mb-2">
                     Perfis da Biblioteca Selecionados ({projectAgents.length})
                   </p>
                   {projectAgents.length === 0 ? (
                     <p className="text-xs text-ink-muted">
-                      Nenhum agente selecionado. Use "Compor Equipe IA" para análise determinística de competências.
+                      Nenhum agente selecionado. Use &ldquo;Compor Equipe IA&rdquo; para análise determinística de competências.
                     </p>
                   ) : (
                     <div className="space-y-2">
                       {projectAgents.map((ag) => (
-                        <div key={ag.id} className="flex items-center justify-between p-2.5 rounded-lg border border-line bg-canvas text-xs">
+                        <div
+                          key={ag.id}
+                          className="flex items-center justify-between p-2.5 rounded-lg border border-line bg-canvas text-xs"
+                        >
                           <div className="min-w-0">
+                            <span className="mr-1.5">{ag.emoji}</span>
                             <span className="font-mono text-accent mr-2">{ag.code}</span>
                             <span className="font-medium text-ink">{ag.name}</span>
                             <span className="text-ink-subtle ml-2">· {ag.division}</span>
@@ -633,6 +859,58 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
           </div>
         )}
       </div>
+
+      {/* Mandatory Completion Evidence Modal */}
+      {closingTask && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40"
+          onClick={() => setClosingTask(null)}
+        >
+          <form
+            onSubmit={handleConfirmEvidence}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md p-5 rounded-2xl nc-glass-window space-y-4"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-sm font-bold text-ink">
+                Evidência Obrigatória para Conclusão
+              </h3>
+              <button type="button" onClick={() => setClosingTask(null)} className="text-ink-muted cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-2 text-xs">
+              <p className="font-semibold text-ink">{closingTask.title}</p>
+              <p className="text-ink-subtle">
+                Critério definido: {closingTask.completionCriteria}
+              </p>
+              <textarea
+                rows={3}
+                required
+                value={evidenceInput}
+                onChange={(e) => setEvidenceInput(e.target.value)}
+                placeholder="Informe link de PR/commit, hash, relatório de testes ou parecer que comprove a conclusão..."
+                className="w-full px-3 py-2 rounded-lg border border-line bg-surface text-ink"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setClosingTask(null)}
+                className="px-3 py-1.5 rounded-lg border border-line text-xs text-ink-muted cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-1.5 rounded-lg bg-accent text-white text-xs font-semibold cursor-pointer"
+              >
+                Registrar Evidência & Concluir
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

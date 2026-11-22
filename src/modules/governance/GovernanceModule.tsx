@@ -51,8 +51,8 @@ export const GovernanceModule: React.FC<GovernanceModuleProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="p-5 rounded-xl border border-line bg-surface flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-8">
+      <div className="p-6 rounded-2xl border border-line bg-surface flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <ShieldCheck className="w-5 h-5 text-accent shrink-0" />
           <div>

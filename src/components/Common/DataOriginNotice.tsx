@@ -14,7 +14,7 @@ export const DataOriginNotice: React.FC<DataOriginNoticeProps> = ({
   onConfigureIntegration,
 }) => {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 rounded-lg border border-line bg-surface-subtle/60 text-xs text-ink-muted">
+    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-xl border border-line bg-surface/80 text-xs text-ink-muted">
       <div className="flex items-center gap-2 min-w-0">
         <Info className="w-3.5 h-3.5 text-accent shrink-0" />
         <span className="truncate">

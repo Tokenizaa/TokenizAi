@@ -19,7 +19,7 @@ export const CustomersModule: React.FC<CustomersModuleProps> = ({ state, onNavig
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <DataOriginNotice
         sourceLabel="Carteira de clientes, contatos e saúde operacional demonstrativa"
         pendingIntegration="CRM Corporativo & Base Contratual"
