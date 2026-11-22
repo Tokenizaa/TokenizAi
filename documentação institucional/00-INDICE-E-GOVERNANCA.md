@@ -2,8 +2,8 @@
 
 > **Repositório:** Tokenizaa/TokenizAi (main)  
 > **Diretório:** `documentação institucional/`  
-> **Versão:** 2.0  
-> **Data:** 21 de novembro de 2026  
+> **Versão:** 2.1  
+> **Data:** 22 de novembro de 2026  
 > **Responsável:** Hermes (Chefe de Gabinete Executivo)  
 > **Autoridade:** Netto Farias (Founder, NettosCorp)
 
@@ -25,7 +25,7 @@ Este diretório é a **única fonte canônica** de documentação arquitetural e
 
 | # | Arquivo | Finalidade | Status | Versão |
 |---|---------|------------|--------|--------|
-| 00 | `00-INDICE-E-GOVERNANCA.md` | Este arquivo: índice, regras documentais, governança | ✅ Canônico | 2.0 |
+| 00 | `00-INDICE-E-GOVERNANCA.md` | Este arquivo: índice, regras documentais, governança | ✅ Canônico | 2.1 |
 | 01 | `01-VISAO-E-DIRETRIZES.md` | Visão institucional, princípios, diretrizes de produto | ✅ Canônico | 1.0 |
 | 02 | `02-ENGENHARIA-REVERSA-TOKENIZAI.md` | **Auditoria completa com evidências reais** do TokenizAi | ✅ Canônico | **2.0** |
 | 03 | `03-ENGENHARIA-REVERSA-AGENCY-AGENTS.md` | Catálogo, identidades, NEXUS, integração Hermes | ✅ Canônico | 1.0 |
@@ -37,7 +37,7 @@ Este diretório é a **única fonte canônica** de documentação arquitetural e
 | 09 | `09-SEGURANCA-E-GOVERNANCA.md` | Identidade, autoridade, permissões, RBAC, auditoria | ✅ Canônico | 1.0 |
 | 10 | `10-ROADMAP-DE-INTEGRACAO.md` | Fases de desenvolvimento, migração, homologação | ✅ Canônico | 1.0 |
 | 11 | `11-MATRIZ-DE-ADERENCIA.md` | **Matriz atualizada com evidências reais** do que existe vs. falta | ✅ Canônico | **2.0** |
-| 12 | `12-EVIDENCIAS-E-PENDENCIAS.md` | Evidências consolidadas, pendências P0/P1/P2 e decisões pendentes | ✅ Canônico | **2.0** |
+| 12 | `12-EVIDENCIAS-E-PENDENCIAS.md` | Evidências consolidadas, pendências P0/P1/P2 e decisões pendentes | ✅ Canônico | **2.1** |
 | 13 | `13-BASELINE-REAL-SUPABASE-E-SEGURANCA.md` | Baseline real do Supabase, hardening RLS, memberships e bloqueios de segurança | ✅ Canônico | **1.0** |
 
 ---
@@ -106,7 +106,7 @@ Toda afirmação técnica deve citar a origem:
 
 | Projeto | Checkout Local | Remote | Branch | Commit Analisado |
 |---------|---------------|--------|--------|------------------|
-| **TokenizAi** | `/home/lg/workspace/NettosCorp/TokenizAi` | Tokenizaa/TokenizAi | main | `2988750` |
+| **TokenizAi** | `/home/lg/workspace/NettosCorp/TokenizAi` | Tokenizaa/TokenizAi | main | `d12f3db` |
 | **Agency Agents (corpus)** | `/home/lg/workspace/NettosCorp/NettosCorp/enterprise/agency-agents` | Tokenizaa/agency-agents | main | `4df4038` |
 | **Agency Agents (desktop app)** | `/home/lg/workspace/NettosCorp/NettosCorp/enterprise/agency-agents-app` | Tokenizaa/agency-agents-app | main | `5757c80` (v0.3.2) |
 | **Agency Agents (upstream)** | N/A | msitarzewski/agency-agents | main | `8ae6164` |
@@ -120,6 +120,7 @@ Toda afirmação técnica deve citar a origem:
 |--------|------|-------|---------|
 | 1.0 | 21/11/2026 | Hermes | Criação inicial — consolidação canônica dos 13 documentos |
 | 2.0 | 21/11/2026 | Hermes | Atualização com evidências reais: TokenizAi auditado, Matriz e Documento 12 consolidados |
+| 2.1 | 22/11/2026 | ChatGPT / Conselheiro | Correção da contagem do índice, separação do corpus e desktop app, baseline atual da Fase 0 e status de CI |
 | 2.1 | 22/11/2026 | ChatGPT / Conselheiro | Reconciliação independente da Fase 0: separação entre repositório do corpus e desktop app, correção do índice (documento 13), referências do orquestrador e estado real do CI |
 
 ---

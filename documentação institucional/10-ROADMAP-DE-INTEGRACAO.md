@@ -1,10 +1,10 @@
 # Roadmap de Integração
 
-> **Versão:** 1.0  
-> **Data:** 21 de novembro de 2026  
+> **Versão:** 1.1  
+> **Data:** 22 de novembro de 2026  
 > **Status:** **EXECUÇÃO AUTORIZADA — Fase 0 em validação; avanço bloqueado até CI verde**  
 > **Base:** Arquitetura Alvo (05) + Modelo de Domínio (06) + Segurança (09)  
-> **Responsável:** Hermes
+> **Responsável pela execução atual:** Platform / Conselheiro
 
 ---
 
@@ -36,11 +36,11 @@
 
 | Task | Responsável | Critério de Aceite |
 |------|-------------|-------------------|
-| Recuperar `build-hermes-plugin.py` do upstream `msitarzewski/agency-agents` | Hermes | Script funcional, gera plugin Hermes |
-| Recuperar `scripts/lib.sh`, `install.sh`, `lint-agents.sh`, `check-divisions.sh`, `check-tools.sh` | Hermes | Scripts executam sem erro |
-| Recuperar pasta `strategy/` (NEXUS) do upstream | Hermes | 7 arquivos NEXUS no checkout |
+| Confirmar e validar `scripts/build-hermes-plugin.py` no fork, usando upstream `8ae6164` como referência | Platform | Script gera plugin e passa contract/behavior tests |
+| Confirmar presença e executar `scripts/lib.sh`, `install.sh`, `lint-agents.sh`, `check-divisions.sh`, `check-tools.sh` | Platform | Scripts executam sem erro |
+| Confirmar sincronização da pasta `strategy/` (NEXUS) com o upstream | Platform | Sete playbooks de fase, estratégia e runbooks presentes e consistentes |
 | Configurar GitHub Actions básico: `cargo fmt`, `cargo test`, `npm run check`, `npm run build` | Platform | CI verde no fork Tokenizaa |
-| Patch Antigravity `date_added` → determinístico | Hermes | Parity test passa para antigravity |
+| Confirmar que Antigravity não emite `date_added` e adicionar teste de determinismo | Platform | Parity/determinismo passa em CI |
 | Fix `EvidenceQA` → `testing-evidence-collector` no orchestrator | Platform | Agente referência corrigido no commit `4df4038` |
 
 **Estado de execução (22/11/2026):**

@@ -1,8 +1,8 @@
 # Evidências e Pendências — Auditoria Técnica NettosCorp Enterprise
 
-> **Versão:** 2.0  
-> **Data:** 21 de novembro de 2026  
-> **Status:** **CONSOLIDADO COM EVIDÊNCIAS REAIS** — Atualizado com auditoria direta de 4 repositórios e estado do GitHub Actions  
+> **Versão:** 2.1  
+> **Data:** 22 de novembro de 2026  
+> **Status:** **FASE 0 IMPLEMENTADA PARCIALMENTE — HOMOLOGAÇÃO CI BLOQUEADA**  
 > **Responsável:** Hermes
 
 ---
@@ -93,10 +93,10 @@
 | **P0-07** | Validação dos scripts do Agency Agents | Agency Agents | `lib.sh`, `install.sh`, `lint-agents.sh`, `check-divisions.sh` e `check-tools.sh` presentes no fork | Executar workflows de validação e corrigir falhas reais | Platform | Fase 0 |
 | **P0-08** | Validação da NEXUS Strategy | Agency Agents | `strategy/nexus-strategy.md`, 7 playbooks e 4 runbooks presentes | Executar validação de runbooks e revisar consistência | Platform | Fase 0 |
 | **P0-09** | Regressão de determinismo Antigravity | Agency Agents | Conversor atual não emite `date_added`; teste determinístico adicionado | Executar `scripts/test-antigravity-determinism.sh` em CI | Platform | Fase 0 |
-| **P0-10** | Referência EvidenceQA obsoleta | Agency Agents | Quatro ocorrências em `specialized/agents-orchestrator.md` substituídas por `testing-evidence-collector` no commit `4df4038` | Reexecutar linter após restauração do CI | Platform | Fase 0 |
-| **P0-11** | Parity/determinismo Antigravity | Agency Agents | Teste de regressão adicionado; resultado ainda não executado | Confirmar resultado verde do teste | Platform | Fase 0 |
-| **P0-12** | NEXUS Strategy — item duplicado de P0-08 | Agency Agents | Conteúdo presente em `strategy/`; não é mais ausência de arquivo | Consolidar como resolvido após validação CI | Platform | Fase 0 |
-| **P0-13** | Scripts de validação — item duplicado de P0-07 | Agency Agents | Scripts previstos estão presentes no fork | Consolidar como resolvido após validação CI | Platform | Fase 0 |
+| **P0-10** | Referência EvidenceQA obsoleta — correção aplicada | Agency Agents | Quatro ocorrências substituídas por `testing-evidence-collector` no commit `4df4038` | Validar linter quando o CI voltar a executar | Platform | Fase 0 |
+| **P0-11** | Parity/determinismo Antigravity — duplicata de P0-09 | Agency Agents | Mesmo teste de regressão registrado em P0-09 | Consolidar como um único critério de aceite | Platform | Fase 0 |
+| **P0-12** | NEXUS Strategy — duplicata de P0-08 | Agency Agents | Conteúdo já presente em `strategy/` | Consolidar como duplicata; validar workflow | Platform | Fase 0 |
+| **P0-13** | Scripts de validação — duplicata de P0-07 | Agency Agents | Scripts previstos estão presentes no fork | Consolidar como duplicata; validar workflows | Platform | Fase 0 |
 | **P0-14** | Homologação do GitHub Actions | Agency Agents + Desktop App | Workflows adicionados/atualizados; execuções falharam antes de iniciar steps (steps vazios/nulos), sem logs recuperáveis | Verificar disponibilidade/permissões dos runners e obter CI verde nos dois repositórios | Platform | Fase 0 |
 
 ---
@@ -125,7 +125,7 @@
 | **P2-01** | Governance Layer (Authority + Policy + Audit) | — | Authority Engine, Policy Engine (OPA), Audit Trail | Fase 8 |
 | **P2-02** | Memory Layer (Vector DB + RAG + Graph) | — | pgvector + RAG + Knowledge Graph (Apache Age) | Fase 9 |
 | **P2-02** | **NEXUS Strategy ausente no fork** | Agency Agents | Sync `strategy/` do upstream `msitarzewski/agency-agents` | Fase 0 |
-| **P2-03** | **Scripts validação AA ausentes** | Agency Agents | Recuperar `lib.sh`, `install.sh`, `lint-agents.sh`, etc. do upstream | Fase 0 |
+| **P2-03** | **Scripts validação AA ausentes** | Agency Agents | Item obsoleto: scripts presentes; ver P0-07 | Fase 0 |
 | **P2-04** | **CI/CD ausente no fork AA** | Agency Agents | Implementar GitHub Actions básico | Fase 0 |
 | **P2-05** | NEXUS Playbooks/Runbooks | Agency Agents | Adotar `playbooks/`, `runbooks/`, `runbooks.json` do upstream | Fase 10 |
 
@@ -180,29 +180,25 @@
 
 ---
 
-## 7. Próximas Ações Imediatas (Esta Semana)
+## 7. Próximas Ações Imediatas — Fechamento da Fase 0
 
 | Ação | Responsável | Critério de Conclusão |
 |------|-------------|-----------------------|
-| 1. Recuperar `build-hermes-plugin.py` do upstream | Hermes | Script funcional, gera plugin Hermes |
-| 2. Recuperar `scripts/` completos do upstream AA | Hermes | Scripts executam sem erro |
-| 3. Sync `strategy/` (NEXUS) do upstream | Hermes | 7 arquivos NEXUS no checkout |
-| 4. Patch Antigravity `date_added` → determinístico | Hermes | Parity test passa |
-| 4. Configurar GitHub Actions básico (fmt, test, build) | Platform | CI verde no fork Tokenizaa |
-| 5. Configurar `PAPERCLIP_ENDPOINT` + `PAPERCLIP_API_KEY` no TokenizAi | Platform | Health check mostra `paperclip: true` |
-| 6. Configurar `SUPABASE_URL` + `SUPABASE_ANON_KEY` no TokenizAi | Platform | Health check mostra `supabase: true` |
-| 7. Configurar `GEMINI_API_KEY` válida no TokenizAi | Platform | Endpoints `/api/ai/*` retornam 200 |
-| 8. Configurar `GITHUB_TOKEN` no TokenizAi | Platform | `/api/integrations/github/inspect` funciona para repos privados |
-| 9. Iniciar Fase 1: `@nettoscorp/shared`, `@nettoscorp/db`, `@nettoscorp/auth` | Platform Engineer | 3 packages publicados no npm privado |
+| 1. Verificar disponibilidade e permissões do GitHub Actions nos dois repositórios | Founder / Platform | Jobs iniciam steps e logs ficam disponíveis |
+| 2. Reexecutar os workflows de `Tokenizaa/agency-agents` | Platform | Divisions, tools, runbooks, installer, Hermes plugin e Antigravity passam |
+| 3. Reexecutar o PR Check de `Tokenizaa/agency-agents-app` | Platform | `cargo fmt`, `cargo test`, `npm run check` e `npm run build` verdes |
+| 4. Corrigir falhas reais eventualmente reveladas pelos logs | Platform | Nenhum erro de código ou teste pendente |
+| 5. Homologar e registrar a Fase 0 | Conselheiro | Evidências de CI verde e atualização do roadmap |
 
----
+**Regra:** não iniciar a Fase 1 enquanto qualquer workflow da Fase 0 permanecer sem execução verificável ou com falha.
 
 ## 8. Evidências Consolidadas (Referência Rápida)
 
 | Repositório | Commit | Arquivos-Chave Auditados | Total Linhas Auditadas |
 |-------------|--------|-------------------------|------------------------|
-| **TokenizAi** | `2988750` | `server.ts:390`, `App.tsx:475`, `enterpriseService.ts:349`, `enterpriseSeed.ts:883`, `permissions.ts:145`, `enterprise.ts:374`, `server.ts:390` | ~2.500 linhas |
-| **Agency Agents** | `da407fe` (fork) / `8ae6164` (upstream) | `tools.json`, `agency-categories.json`, `convert.sh:954`, `corpus-baseline/` (282 agents), `src-tauri/src/` (Rust) | ~1.500 linhas + 282 agents |
+| **TokenizAi** | `d12f3db` | `server.ts:390`, `App.tsx:475`, `enterpriseService.ts:349`, `enterpriseSeed.ts:883`, `permissions.ts:145`, `enterprise.ts:374`, `server.ts:390` | ~2.500 linhas |
+| **Agency Agents corpus** | `4df4038` (fork) / `8ae6164` (upstream) | `tools.json`, `agency-categories.json`, `convert.sh:954`, `corpus-baseline/` (282 agents), `src-tauri/src/` (Rust) | ~1.500 linhas + 282 agents |
+| **Agency Agents app** | `5757c80` | `package.json`, `src-tauri/Cargo.toml`, `.github/workflows/pr-check.yml` | CI commands wired; execution blocked |
 | **Paperclip** | `cb64a236b` | `server/src/index.ts`, `app.ts:1485`, `ui/src/App.tsx:887`, `packages/db/` (480 tabelas), `packages/adapters/*` (12) | ~3.000 linhas + 480 tabelas |
 
 **Total de evidências rastreadas:** ~7.000 linhas de código + 282 agentes + 480 tabelas + 27 packages
