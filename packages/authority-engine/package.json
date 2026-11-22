@@ -1,0 +1,41 @@
+{
+  "name": "@nettoscorp/authority-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NettosCorp Enterprise — Authority Engine: JWT governance, refresh rotation, revocation, authority/clearance checks and separation of duties (Fase 8)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@nettoscorp/auth": "workspace:*",
+    "@nettoscorp/shared": "workspace:*",
+    "@nettoscorp/db": "workspace:*",
+    "better-auth": "^1.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^3.23.0"
+  },
+  "peerDependencies": {
+    "@nettoscorp/auth": "workspace:*",
+    "@nettoscorp/shared": "workspace:*",
+    "@nettoscorp/db": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/node": "^22.14.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.0.0"
+  }
+}

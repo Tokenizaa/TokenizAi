@@ -1,0 +1,38 @@
+{
+  "name": "@nettoscorp/compliance-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NettosCorp Enterprise — Fase 8: Compliance Dashboard — painel unificado status compliance, health, audit, logs, metrics",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@nettoscorp/ui-primitives": "workspace:*",
+    "@nettoscorp/design-tokens": "workspace:*",
+    "@nettoscorp/shared": "workspace:*",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "lucide-react": "^0.546.0",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": { "node": ">=22.0.0" }
+}
