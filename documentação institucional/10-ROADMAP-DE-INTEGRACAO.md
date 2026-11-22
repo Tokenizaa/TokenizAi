@@ -259,3 +259,12 @@
 ---
 
 *Execução da Fase 0 autorizada pelo Founder (Netto Farias). O roadmap será executado uma fase completa por rodada; nenhuma fase seguinte começa antes da homologação integral da fase atual.*
+## 5. Protocolo Permanente de Execução das Fases
+
+- Cada fase do roadmap institucional deverá ser executada como uma unidade completa de trabalho, do início ao encerramento formal
+- Não será permitido iniciar a fase seguinte enquanto a fase atual não estiver integralmente concluída, validada, documentada e submetida à homologação
+- Todos os 9 critérios obrigatórios devem ser atendidos: escopo, implementação, validação, consistência, Git, documentação, pendências, relatório de encerramento e homologação
+- Uma pendência não bloqueadora pode ser aceita na homologação, desde que documentada, com impacto avaliado e que não comprometa os objetivos ou critérios de aceite da fase
+- O fluxo institucional passa a ser: Planejamento da fase → Execução integral → Validação → Revisão de consistência → Documentação → Reconciliação Git → Relatório de encerramento → Homologação → Abertura da próxima fase
+- Não iniciar a Fase 2 antes da homologação integral da Fase 1
+

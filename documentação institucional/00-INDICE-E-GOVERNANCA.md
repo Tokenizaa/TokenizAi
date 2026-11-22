@@ -2,9 +2,9 @@
 
 > **Repositório:** Tokenizaa/TokenizAi (main)  
 > **Diretório:** `documentação institucional/`  
-> **Versão:** 2.1  
-> **Data:** 21 de novembro de 2026  
-> **Responsável:** Hermes (Chefe de Gabinete Executivo)  
+> **Versão:** 2.3  \
+> **Data:** 22 de novembro de 2026  \
+> **Responsável:** Hermes (Chefe de Gabinete Executivo)  \
 > **Autoridade:** Netto Farias (Founder, NettosCorp)
 
 ---
@@ -39,6 +39,7 @@ Este diretório é a **única fonte canônica** de documentação arquitetural e
 | 11 | `11-MATRIZ-DE-ADERENCIA.md` | **Matriz atualizada com evidências reais** do que existe vs. falta | ✅ Canônico | **2.0** |
 | 12 | `12-EVIDENCIAS-E-PENDENCIAS.md` | Evidências consolidadas, pendências P0/P1/P2 e decisões pendentes | ✅ Canônico | **2.1** |
 | 13 | `13-BASELINE-REAL-SUPABASE-E-SEGURANCA.md` | Baseline real do Supabase, hardening RLS, memberships e bloqueios de segurança | ✅ Canônico | **1.0** |
+| 14 | `14-DECISOES-ARQUITETURAIS.md` | Registro formal de decisões arquiteturais (ADRs), status de aprovação e justificativas | ✅ Canônico | **1.0** |
 
 ---
 
@@ -76,6 +77,9 @@ Toda afirmação técnica deve citar a origem:
 - Cada documento tem cabeçalho com versão, data, responsável
 - Alterações apenas via PR revisado ou autorização direta do Founder
 - Histórico no git; não editar sem rastreabilidade
+- **Regra Permanente de Execução das Fases** (22/11/2026): Cada fase do roadmap institucional deverá ser executada como uma unidade completa de trabalho, do início ao encerramento formal. Não será permitido iniciar a fase seguinte enquanto a fase atual não estiver integralmente concluída, validada, documentada e submetida à homologação. Ver item 2 dos Criterios Obrigatórios para Concluir Qualquer Fase da Deliberação Executiva.
+
+### 3.4 Regra Permanente de Execução das Fases
 
 ---
 
@@ -125,6 +129,7 @@ Toda afirmação técnica deve citar a origem:
 | 2.2 | 22/11/2026 | Hermes / Conselheiro | **Fase 0 homologada localmente**: três repositórios reconciliados (TokenizAi `61da94a`, corpus AA `4df4038`, desktop AA `6d9a355`); validações locais executadas (11 gates: 10 aprovados, 1 pendente — cargo test falha em build script Tauri); CI remoto bloqueado por cobrança GitHub Actions; `agency-agents/` e `paperclip/` classificados como referências intencionais; `.svelte-kit/` como artefato gerado. |
 
 ---
+| 2.3 | 22/11/2026 | Hermes / Conselheiro | **Regra Permanente de Execução das Fases**: cada fase do roadmap institucional executada como unidade completa; adição de `decisions.md`; ADRs 01, 02, 03 registrados; Fase 1 autorizada após homologação local da Fase 0. |
 
 ## 7. Resumo de Evidências por Repositório (Quick Reference)
 
