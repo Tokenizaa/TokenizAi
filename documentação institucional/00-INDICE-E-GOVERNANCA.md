@@ -46,6 +46,7 @@ O usuário deve administrar a empresa e seus profissionais humanos e digitais pe
 | [10 — Roadmap de integração](10-ROADMAP-DE-INTEGRACAO.md) | Fases, dependências e critérios de conclusão |
 | [11 — Matriz de aderência](11-MATRIZ-DE-ADERENCIA.md) | Existente, parcial, demonstrativo, ausente e não verificado |
 | [12 — Registro de evidências e pendências](12-EVIDENCIAS-E-PENDENCIAS.md) | Evidências, limitações e auditorias ainda necessárias |
+| [13 — Baseline real Supabase e segurança](13-BASELINE-REAL-SUPABASE-E-SEGURANCA.md) | Estado verificado do banco, hardening aplicado e sequência de implementação |
 
 ## Como interpretar os status
 
