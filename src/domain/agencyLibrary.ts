@@ -1,5 +1,6 @@
 import type {
   AgentBlueprint,
+  AgentBlueprintOverride,
   AgentDivision,
   DeterministicRecommendation,
   EnterpriseProject,
@@ -855,4 +856,73 @@ export function computeTeamCoverageAndGaps(
     gaps,
     complementarityNote: `${selected.length} perfil(is) distribuídos em ${divisions.size} divisão(ões) profissional(is) (${Array.from(divisions).join(', ')}).`,
   };
+}
+
+export function bumpSemverPatch(version: string): string {
+  const parts = version.split('.').map((n) => Number.parseInt(n, 10));
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) {
+    return '1.0.1';
+  }
+  return `${parts[0]}.${parts[1]}.${parts[2] + 1}`;
+}
+
+export function resolveAgentBlueprint(
+  blueprint: AgentBlueprint,
+  overrides?: Record<string, AgentBlueprintOverride>
+): AgentBlueprint {
+  const ov = overrides?.[blueprint.id];
+  if (!ov) return blueprint;
+  return {
+    ...blueprint,
+    ...ov,
+  };
+}
+
+export function toAgentMarkdown(agent: AgentBlueprint): string {
+  const yamlArray = (items: string[]) => items.map((i) => `  - "${i.replace(/"/g, '\\"')}"`).join('\n');
+  return [
+    '---',
+    `id: "${agent.id}"`,
+    `code: "${agent.code}"`,
+    `slug: "${agent.slug}"`,
+    `name: "${agent.name.replace(/"/g, '\\"')}"`,
+    `division: "${agent.division}"`,
+    `archetype: "${agent.archetype}"`,
+    `vibe: "${agent.vibe.replace(/"/g, '\\"')}"`,
+    `color: "${agent.color}"`,
+    `emoji: "${agent.emoji}"`,
+    `version: "${agent.version}"`,
+    `origin_path: "${agent.originPath}"`,
+    `paperclip_compatible: ${agent.paperclipCompatible}`,
+    'skills:',
+    yamlArray(agent.skills),
+    'nexus_gates:',
+    yamlArray(agent.nexusGates),
+    '---',
+    '',
+    `# ${agent.emoji} ${agent.name} (${agent.code})`,
+    '',
+    `**Especialidade:** ${agent.specialty}`,
+    '',
+    '## Identidade & Estilo',
+    `- **Personalidade:** ${agent.personality}`,
+    `- **Comunicação:** ${agent.communicationStyle}`,
+    `- **Estilo de Trabalho:** ${agent.workStyle}`,
+    `- **Tomada de Decisão:** ${agent.decisionMakingStyle}`,
+    '',
+    '## Metodologia',
+    agent.methodology,
+    '',
+    '## Instruções Operacionais',
+    agent.instructions,
+    '',
+    '## Responsabilidades',
+    ...agent.responsibilities.map((r) => `- ${r}`),
+    '',
+    '## Limitações Explícitas',
+    ...agent.limitations.map((l) => `- ${l}`),
+    '',
+    '## Runbook Padrão',
+    ...agent.runbook.map((step, idx) => `${idx + 1}. ${step}`),
+  ].join('\n');
 }

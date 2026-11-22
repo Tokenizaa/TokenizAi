@@ -35,6 +35,7 @@ import {
 import type {
   AccentTheme,
   AgentBlueprint,
+  AgentBlueprintOverride,
   AgentExecutionSession,
   ChatConversation,
   ChatMessage,
@@ -270,6 +271,20 @@ export default function App() {
             : [rec, ...prev.governance],
         };
       });
+    });
+
+    es.addEventListener('agency:blueprint_updated', (ev) => {
+      const payload = safeParse<{ blueprintId: string; override: AgentBlueprintOverride }>(
+        (ev as MessageEvent).data
+      );
+      if (!payload) return;
+      setState((prev) => ({
+        ...prev,
+        blueprintOverrides: {
+          ...prev.blueprintOverrides,
+          [payload.blueprintId]: payload.override,
+        },
+      }));
     });
 
     es.addEventListener('state:reset', () => {
@@ -622,6 +637,36 @@ export default function App() {
     }
   };
 
+  const handleAddTaskComment = async (taskId: string, text: string) => {
+    setActionError(null);
+    try {
+      const res = await EnterpriseApiAdapter.addTaskComment(activeRole, taskId, text);
+      setState((prev) => ({
+        ...prev,
+        tasks: prev.tasks.map((t) => (t.id === taskId ? res.task : t)),
+      }));
+      recordQueue('add_task_comment');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro ao registrar comentário.';
+      setActionError(msg);
+      throw err;
+    }
+  };
+
+  const handleEscalateTask = async (taskId: string, reason: string) => {
+    setActionError(null);
+    try {
+      const res = await EnterpriseApiAdapter.escalateTask(activeRole, taskId, reason);
+      await refreshFromServer(activeRole);
+      recordQueue('escalate_task');
+      return res;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro ao escalonar tarefa.';
+      setActionError(msg);
+      throw err;
+    }
+  };
+
   const handleSetHomologation = async (agent: AgentBlueprint, status: HomologationStatus) => {
     setActionError(null);
     try {
@@ -636,22 +681,44 @@ export default function App() {
     }
   };
 
-  const handleSaveComposition = async (composition: Omit<TeamCompositionRecord, 'id' | 'createdAt'>) => {
+  const handleUpdateBlueprint = async (
+    blueprintId: string,
+    patch: Partial<AgentBlueprintOverride>
+  ) => {
+    setActionError(null);
+    try {
+      const res = await EnterpriseApiAdapter.updateAgentBlueprint(activeRole, blueprintId, patch);
+      setState((prev) => ({
+        ...prev,
+        blueprintOverrides: {
+          ...prev.blueprintOverrides,
+          [res.blueprintId]: res.override,
+        },
+      }));
+      recordQueue('update_blueprint');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro ao editar perfil do agente.';
+      setActionError(msg);
+      throw err;
+    }
+  };
+
+  const handleSaveComposition = async (
+    composition: Omit<TeamCompositionRecord, 'id' | 'createdAt'> & {
+      provisionInstances?: boolean;
+      generateNexusTasks?: boolean;
+    }
+  ) => {
     setActionError(null);
     try {
       const res = await EnterpriseApiAdapter.saveTeamComposition(activeRole, composition);
-      setState((prev) => ({
-        ...prev,
-        compositions: [res.composition, ...prev.compositions],
-        projects: prev.projects.map((p) =>
-          p.id === composition.projectId
-            ? { ...p, selectedAgentIds: composition.selectedBlueprintIds }
-            : p
-        ),
-      }));
+      await refreshFromServer(activeRole);
       recordQueue('save_composition');
+      return res;
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Erro ao salvar composição de equipe.');
+      const msg = err instanceof Error ? err.message : 'Erro ao salvar composição de equipe.';
+      setActionError(msg);
+      throw err;
     }
   };
 
@@ -978,6 +1045,8 @@ export default function App() {
             activeRole={activeRole}
             onCreateTask={handleCreateTask}
             onUpdateTask={handleUpdateTask}
+            onAddTaskComment={handleAddTaskComment}
+            onEscalateTask={handleEscalateTask}
             onOpenChat={(target) => void handleOpenChat(target)}
             onNavigate={(m) => navigateTo(m)}
           />
@@ -989,7 +1058,10 @@ export default function App() {
             activeRole={activeRole}
             initialSearch={agentSearchSeed}
             onSetHomologation={handleSetHomologation}
+            onUpdateBlueprint={handleUpdateBlueprint}
+            onCreateRuntimeInstance={handleCreateRuntimeInstance}
             onOpenChat={(target) => void handleOpenChat(target)}
+            onNavigate={(m) => navigateTo(m)}
           />
         );
       case 'team-composer':

@@ -4,11 +4,13 @@ import fs from 'fs';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
-import { AGENCY_AGENTS_283 } from './src/domain/agencyLibrary.ts';
+import { AGENCY_AGENTS_283, bumpSemverPatch, resolveAgentBlueprint } from './src/domain/agencyLibrary.ts';
 import { INITIAL_ENTERPRISE_STATE } from './src/domain/enterpriseSeed.ts';
 import { AUTHORITY_LABELS, ROLE_DEFINITIONS } from './src/domain/permissions.ts';
 import type {
+  AgentBlueprintOverride,
   AgentExecutionSession,
+  AppNotification,
   ChatConversation,
   ChatMessage,
   DepartmentRecord,
@@ -20,6 +22,7 @@ import type {
   OperationalAgentInstance,
   OrgPosition,
   ProjectTask,
+  TaskComment,
   TaskLifecycleStatus,
   TeamCompositionRecord,
   UserRole,
@@ -68,6 +71,7 @@ function loadDatabase(): EnterpriseState {
       return {
         ...INITIAL_ENTERPRISE_STATE,
         ...parsed,
+        blueprintOverrides: parsed.blueprintOverrides ?? {},
       };
     }
   } catch {
@@ -147,7 +151,8 @@ function buildAgentSystemInstruction(
   department: DepartmentRecord | undefined,
   project: EnterpriseProject | undefined
 ): string {
-  const blueprint = AGENCY_AGENTS_283.find((a) => a.id === instance.blueprintId);
+  const rawBlueprint = AGENCY_AGENTS_283.find((a) => a.id === instance.blueprintId);
+  const blueprint = rawBlueprint ? resolveAgentBlueprint(rawBlueprint, db.blueprintOverrides) : undefined;
   const superiorPos = position?.reportsToPositionId
     ? db.orgPositions.find((p) => p.id === position.reportsToPositionId)
     : undefined;
@@ -155,9 +160,14 @@ function buildAgentSystemInstruction(
   return [
     `Você é o profissional digital operacional "${instance.instanceName}" na plataforma TokenizAi — NettosCorp Enterprise.`,
     blueprint
-      ? `IDENTIDADE PROFISSIONAL (Agency Agents ${blueprint.code}): Nome "${blueprint.name}", Arquétipo "${blueprint.archetype}", Personalidade "${blueprint.personality}", Estilo de Comunicação "${blueprint.communicationStyle}", Tomada de Decisão "${blueprint.decisionMakingStyle}".`
+      ? `IDENTIDADE PROFISSIONAL (Agency Agents ${blueprint.code} v${blueprint.version}): Nome "${blueprint.name}", Arquétipo "${blueprint.archetype}", Personalidade "${blueprint.personality}", Estilo de Comunicação "${blueprint.communicationStyle}", Tomada de Decisão "${blueprint.decisionMakingStyle}".`
       : '',
-    blueprint ? `COMPETÊNCIAS: ${blueprint.competencies.join(', ')}. LIMITAÇÕES EXPLÍCITAS: ${blueprint.limitations.join('; ')}.` : '',
+    blueprint
+      ? `METODOLOGIA & INSTRUÇÕES: ${blueprint.methodology} — ${blueprint.instructions}`
+      : '',
+    blueprint
+      ? `COMPETÊNCIAS: ${blueprint.competencies.join(', ')}. LIMITAÇÕES EXPLÍCITAS: ${blueprint.limitations.join('; ')}.`
+      : '',
     position
       ? `POSIÇÃO ORGANIZACIONAL (Paperclip): Cargo "${position.title}", Departamento "${department?.name ?? 'Geral'}", Nível de Autoridade "${AUTHORITY_LABELS[position.authorityLevel]}", Reporta-se a "${superiorPos?.title ?? 'Direção Executiva'}", Limite de Orçamento R$ ${position.budgetLimitBRL}.`
       : '',
@@ -168,6 +178,83 @@ function buildAgentSystemInstruction(
   ]
     .filter(Boolean)
     .join('\n');
+}
+
+function wouldCreateHierarchyCycle(positionId: string, candidateParentId?: string): boolean {
+  if (!candidateParentId) return false;
+  if (candidateParentId === positionId) return true;
+  const visited = new Set<string>([positionId]);
+  let cursor: string | undefined = candidateParentId;
+  while (cursor) {
+    if (visited.has(cursor)) return true;
+    visited.add(cursor);
+    const parentPos = db.orgPositions.find((p) => p.id === cursor);
+    cursor = parentPos?.reportsToPositionId;
+  }
+  return false;
+}
+
+function syncRuntimeCostToFinance(costBRL: number, projectId?: string): void {
+  if (costBRL <= 0) return;
+  const iaCostCenter = db.costCenters.find((c) => c.id === 'cc-2');
+  if (iaCostCenter) {
+    iaCostCenter.spent = Number((iaCostCenter.spent + costBRL).toFixed(2));
+  }
+  if (projectId) {
+    const proj = db.projects.find((p) => p.id === projectId);
+    if (proj) {
+      proj.spentBRL = Number(((proj.spentBRL ?? 0) + costBRL).toFixed(2));
+    }
+  }
+}
+
+async function dispatchPaperclipAdapter(payload: {
+  instance: OperationalAgentInstance;
+  action: 'chat_turn' | 'heartbeat';
+  prompt?: string;
+  systemInstruction?: string;
+  projectCode?: string;
+}): Promise<{ ok: boolean; text?: string; tokensEstimated?: number; costBRL?: number; reason?: string }> {
+  const endpoint = process.env.PAPERCLIP_ENDPOINT;
+  if (!endpoint) {
+    return {
+      ok: false,
+      reason: 'PAPERCLIP_ENDPOINT não configurado no servidor.',
+    };
+  }
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (process.env.PAPERCLIP_API_KEY) {
+    headers.Authorization = `Bearer ${process.env.PAPERCLIP_API_KEY}`;
+  }
+  const response = await fetch(`${endpoint.replace(/\/+$/, '')}/execute`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      instanceId: payload.instance.id,
+      blueprintCode: payload.instance.blueprintCode,
+      action: payload.action,
+      model: payload.instance.model,
+      projectCode: payload.projectCode,
+      prompt: payload.prompt,
+      systemInstruction: payload.systemInstruction,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Paperclip HTTP adapter respondeu com HTTP ${response.status}.`);
+  }
+  const data = (await response.json()) as {
+    text?: string;
+    tokensEstimated?: number;
+    costBRL?: number;
+  };
+  return {
+    ok: true,
+    text: data.text ?? 'Execução Paperclip concluída.',
+    tokensEstimated: data.tokensEstimated ?? 600,
+    costBRL: data.costBRL ?? 0.35,
+  };
 }
 
 interface SyncPayload {
@@ -426,23 +513,105 @@ async function startServer() {
       return;
     }
 
-    if (agentInst.adapter === 'paperclip-http-adapter' && !process.env.PAPERCLIP_ENDPOINT) {
-      const pendingMsg: ChatMessage = {
-        id: `msg-${Date.now() + 1}`,
-        conversationId: conv.id,
-        senderId: agentInst.id,
-        senderKind: 'agente_operacional',
-        senderName: agentInst.instanceName,
-        senderRole: agentInst.division,
-        content: `Integração pendente: esta instância está configurada para Paperclip External HTTP Adapter (PAPERCLIP_ENDPOINT não configurado). Altere o adaptador para "gemini-server-native" nas configurações da instância ou configure o endpoint Paperclip.`,
-        lifecycleStatus: 'integration_pending',
-        createdAt: new Date().toISOString(),
-      };
-      db.messages = [...db.messages, pendingMsg];
-      persistDatabase();
-      broadcastEvent('chat:message', pendingMsg);
-      res.json({ userMessage: userMsg, agentMessage: pendingMsg });
-      return;
+    const position = db.orgPositions.find((p) => p.id === agentInst.positionId);
+    const department = db.departments.find((d) => d.id === (position?.departmentId ?? agentInst.departmentId));
+    const project = db.projects.find((p) => p.id === (conv.projectId ?? agentInst.projectId));
+
+    if (agentInst.adapter === 'paperclip-http-adapter') {
+      if (!process.env.PAPERCLIP_ENDPOINT) {
+        const pendingMsg: ChatMessage = {
+          id: `msg-${Date.now() + 1}`,
+          conversationId: conv.id,
+          senderId: agentInst.id,
+          senderKind: 'agente_operacional',
+          senderName: agentInst.instanceName,
+          senderRole: agentInst.division,
+          content: `Integração pendente: esta instância está configurada para Paperclip External HTTP Adapter (PAPERCLIP_ENDPOINT não configurado). Altere o adaptador para "gemini-server-native" nas configurações da instância ou configure o endpoint Paperclip.`,
+          lifecycleStatus: 'integration_pending',
+          createdAt: new Date().toISOString(),
+        };
+        db.messages = [...db.messages, pendingMsg];
+        persistDatabase();
+        broadcastEvent('chat:message', pendingMsg);
+        res.json({ userMessage: userMsg, agentMessage: pendingMsg });
+        return;
+      }
+
+      const startedAt = new Date().toISOString();
+      try {
+        const externalRes = await dispatchPaperclipAdapter({
+          instance: agentInst,
+          action: 'chat_turn',
+          prompt: userMsg.content,
+          systemInstruction: buildAgentSystemInstruction(agentInst, position, department, project),
+          projectCode: project?.code,
+        });
+        const finishedAt = new Date().toISOString();
+        const costBRL = Number((externalRes.costBRL ?? 0.35).toFixed(2));
+        const tokensEst = externalRes.tokensEstimated ?? 600;
+        agentInst.spentBudgetBRL = Number((agentInst.spentBudgetBRL + costBRL).toFixed(2));
+        agentInst.executionState = 'ativo_pronto';
+        agentInst.lastHeartbeat = finishedAt;
+
+        const session: AgentExecutionSession = {
+          id: `sess-${Date.now()}`,
+          instanceId: agentInst.id,
+          triggeredBy: roleDef.label,
+          channelId: conv.id,
+          adapterUsed: agentInst.adapter,
+          modelUsed: agentInst.model || 'paperclip-external',
+          status: 'concluida',
+          tokensEstimated: tokensEst,
+          costBRL,
+          summary: `Execução via Paperclip HTTP Adapter em "${conv.title}"`,
+          startedAt,
+          finishedAt,
+        };
+        db.executionSessions = [session, ...db.executionSessions];
+        syncRuntimeCostToFinance(costBRL, project?.id);
+
+        const agentMsg: ChatMessage = {
+          id: `msg-${Date.now() + 2}`,
+          conversationId: conv.id,
+          senderId: agentInst.id,
+          senderKind: 'agente_operacional',
+          senderName: agentInst.instanceName,
+          senderRole: position?.title ?? agentInst.division,
+          recipientId: userMsg.senderId,
+          recipientName: userMsg.senderName,
+          content: externalRes.text || 'Execução Paperclip concluída.',
+          lifecycleStatus: 'execution_completed',
+          createdAt: finishedAt,
+          sessionId: session.id,
+          modelUsed: agentInst.model,
+          contextRef: conv.contextRef,
+        };
+        db.messages = [...db.messages, agentMsg];
+        conv.lastMessageAt = finishedAt;
+        conv.lastMessagePreview = agentMsg.content.slice(0, 120);
+        persistDatabase();
+        broadcastEvent('chat:message', agentMsg);
+        broadcastEvent('agent:session', session);
+        res.json({ userMessage: userMsg, agentMessage: agentMsg, session });
+        return;
+      } catch (err) {
+        const failMsg: ChatMessage = {
+          id: `msg-${Date.now() + 3}`,
+          conversationId: conv.id,
+          senderId: agentInst.id,
+          senderKind: 'agente_operacional',
+          senderName: agentInst.instanceName,
+          senderRole: agentInst.division,
+          content: `Falha no adaptador Paperclip HTTP (${err instanceof Error ? err.message : 'erro desconhecido'}).`,
+          lifecycleStatus: 'execution_failed',
+          createdAt: new Date().toISOString(),
+        };
+        db.messages = [...db.messages, failMsg];
+        persistDatabase();
+        broadcastEvent('chat:message', failMsg);
+        res.status(502).json({ error: failMsg.content, userMessage: userMsg, agentMessage: failMsg });
+        return;
+      }
     }
 
     const ai = getGeminiClient();
@@ -469,10 +638,6 @@ async function startServer() {
     const startedAt = new Date().toISOString();
     agentInst.executionState = 'processando';
     broadcastEvent('agent:status', { instanceId: agentInst.id, executionState: 'processando' });
-
-    const position = db.orgPositions.find((p) => p.id === agentInst.positionId);
-    const department = db.departments.find((d) => d.id === (position?.departmentId ?? agentInst.departmentId));
-    const project = db.projects.find((p) => p.id === (conv.projectId ?? agentInst.projectId));
 
     const previousMessages = db.messages
       .filter((m) => m.conversationId === conv.id && m.id !== userMsg.id)
@@ -531,11 +696,8 @@ async function startServer() {
       };
       db.executionSessions = [session, ...db.executionSessions];
 
-      // Feed real runtime cost into Finance Cost Center
-      const iaCostCenter = db.costCenters.find((c) => c.id === 'cc-2');
-      if (iaCostCenter) {
-        iaCostCenter.spent = Number((iaCostCenter.spent + costBRL).toFixed(2));
-      }
+      // Feed real runtime cost into Finance Cost Center & Project
+      syncRuntimeCostToFinance(costBRL, project?.id);
 
       const agentMsg: ChatMessage = {
         id: `msg-${Date.now() + 2}`,
@@ -602,6 +764,17 @@ async function startServer() {
     const target = db.operationalInstances.find((o) => o.id === targetInstanceId);
     if (!source || !target || source.id === target.id || !topic?.trim()) {
       res.status(400).json({ error: 'Informe dois agentes operacionais distintos e o tópico da interação.' });
+      return;
+    }
+    if (source.executionState === 'pausado' || target.executionState === 'pausado') {
+      res.status(400).json({ error: 'Orquestração bloqueada: ambos os agentes precisam estar ativos (não pausados).' });
+      return;
+    }
+    if (
+      source.spentBudgetBRL >= source.monthlyBudgetBRL ||
+      target.spentBudgetBRL >= target.monthlyBudgetBRL
+    ) {
+      res.status(400).json({ error: 'Orquestração bloqueada por orçamento: teto mensal atingido em uma das instâncias.' });
       return;
     }
 
@@ -726,7 +899,10 @@ async function startServer() {
 
       source.spentBudgetBRL = Number((source.spentBudgetBRL + sess1.costBRL).toFixed(2));
       target.spentBudgetBRL = Number((target.spentBudgetBRL + sess2.costBRL).toFixed(2));
+      source.lastHeartbeat = finished;
+      target.lastHeartbeat = finished;
       db.executionSessions = [sess2, sess1, ...db.executionSessions];
+      syncRuntimeCostToFinance(Number((sess1.costBRL + sess2.costBRL).toFixed(2)), proj?.id);
       db.messages = [...db.messages, msg1, msg2];
       conv.lastMessageAt = finished;
       conv.lastMessagePreview = msg2Text.slice(0, 120);
@@ -744,6 +920,8 @@ async function startServer() {
       broadcastEvent('chat:conversation_created', conv);
       broadcastEvent('chat:message', msg1);
       broadcastEvent('chat:message', msg2);
+      broadcastEvent('agent:session', sess1);
+      broadcastEvent('agent:session', sess2);
       res.json({ conversation: conv, messages: [msg1, msg2] });
     } catch (err) {
       res.status(502).json({ error: err instanceof Error ? err.message : 'Falha na orquestração inter-agentes.' });
@@ -879,8 +1057,8 @@ async function startServer() {
       return;
     }
     const patch = req.body as Partial<OrgPosition>;
-    if (patch.reportsToPositionId === pos.id) {
-      res.status(400).json({ error: 'Uma posição não pode reportar a si mesma.' });
+    if (patch.reportsToPositionId !== undefined && wouldCreateHierarchyCycle(pos.id, patch.reportsToPositionId)) {
+      res.status(400).json({ error: 'Ciclo hierárquico inválido: uma posição não pode reportar a si mesma ou a um subordinado.' });
       return;
     }
     Object.assign(pos, patch);
@@ -937,6 +1115,11 @@ async function startServer() {
   });
 
   app.patch('/api/tasks/:id', (req, res) => {
+    const role = getCallerRole(req);
+    if (!ROLE_DEFINITIONS[role].canEditProjects) {
+      res.status(403).json({ error: 'Perfil sem permissão para alterar status ou delegação de tarefas.' });
+      return;
+    }
     const task = db.tasks.find((t) => t.id === req.params.id);
     if (!task) {
       res.status(404).json({ error: 'Tarefa não encontrada.' });
@@ -949,10 +1132,114 @@ async function startServer() {
       });
       return;
     }
+    const prevStatus = task.status;
     Object.assign(task, patch);
+    if (patch.status && patch.status !== prevStatus) {
+      appendServerAudit(
+        `Status da tarefa atualizado: ${task.title}`,
+        `${prevStatus} -> ${patch.status}${patch.completionEvidence ? ` · Evidência: ${patch.completionEvidence.slice(0, 80)}` : ''}`,
+        ROLE_DEFINITIONS[role].label,
+        AUTHORITY_LABELS[ROLE_DEFINITIONS[role].authorityLevel],
+        task.projectId
+      );
+    }
     persistDatabase();
     broadcastEvent('task:updated', task);
     res.json({ task });
+  });
+
+  app.post('/api/tasks/:id/comments', (req, res) => {
+    const role = getCallerRole(req);
+    const task = db.tasks.find((t) => t.id === req.params.id);
+    if (!task) {
+      res.status(404).json({ error: 'Tarefa não encontrada.' });
+      return;
+    }
+    const { text } = req.body as { text?: string };
+    if (!text?.trim()) {
+      res.status(400).json({ error: 'Texto do comentário é obrigatório.' });
+      return;
+    }
+    const comment: TaskComment = {
+      id: `tc-${Date.now()}`,
+      authorName: ROLE_DEFINITIONS[role].label,
+      authorRole: AUTHORITY_LABELS[ROLE_DEFINITIONS[role].authorityLevel],
+      text: text.trim(),
+      createdAt: new Date().toISOString(),
+    };
+    task.comments = [...(task.comments ?? []), comment];
+    task.commentsCount = task.comments.length;
+    persistDatabase();
+    broadcastEvent('task:updated', task);
+    res.json({ task, comment });
+  });
+
+  app.post('/api/tasks/:id/escalate', (req, res) => {
+    const role = getCallerRole(req);
+    if (!ROLE_DEFINITIONS[role].canEditProjects && role !== 'operacional') {
+      res.status(403).json({ error: 'Perfil sem permissão para escalonar tarefa.' });
+      return;
+    }
+    const task = db.tasks.find((t) => t.id === req.params.id);
+    if (!task) {
+      res.status(404).json({ error: 'Tarefa não encontrada.' });
+      return;
+    }
+    const { reason } = req.body as { reason?: string };
+    const cleanReason = reason?.trim() || 'Impedimento técnico/alçada acima do limite operacional.';
+
+    // Resolve superior position from org chart
+    const assigneePos = db.orgPositions.find(
+      (p) => p.holderId === task.assigneeId
+    );
+    const superiorPos = assigneePos?.reportsToPositionId
+      ? db.orgPositions.find((p) => p.id === assigneePos.reportsToPositionId)
+      : db.orgPositions.find((p) => p.authorityLevel === 'executiva_humana');
+
+    task.status = 'bloqueada';
+    task.escalationNote = cleanReason;
+    task.escalatedToPositionId = superiorPos?.id;
+
+    const delibSeq = db.governance.filter((g) => g.type === 'DELIB').length + 20;
+    const govRecord: GovernanceRecord = {
+      id: `gov-esc-${Date.now()}`,
+      code: `DELIB-2026-0${delibSeq}`,
+      type: 'DELIB',
+      title: `Escalonamento operacional: ${task.title}`,
+      summary: `Motivo: ${cleanReason}. Encaminhado para ${superiorPos?.title ?? 'Direção Executiva'} (Responsável atual: ${task.assigneeName}).`,
+      status: 'pendente',
+      authorName: ROLE_DEFINITIONS[role].label,
+      authorityRole: AUTHORITY_LABELS[ROLE_DEFINITIONS[role].authorityLevel],
+      linkedProjectId: task.projectId,
+      linkedConversationId: task.sourceConversationId,
+      createdAt: new Date().toISOString().slice(0, 10),
+      auditHash: makeAuditHash(`ESC-${task.id}-${Date.now()}`),
+    };
+    db.governance = [govRecord, ...db.governance];
+
+    const notif: AppNotification = {
+      id: `not-esc-${Date.now()}`,
+      title: `Tarefa escalonada: ${task.title}`,
+      detail: `${cleanReason} -> ${superiorPos?.title ?? 'Direção Executiva'}`,
+      severity: 'alerta',
+      targetModule: 'governance',
+      createdAt: 'Agora',
+      read: false,
+    };
+    db.notifications = [notif, ...db.notifications];
+
+    appendServerAudit(
+      `Escalonamento de tarefa: ${task.title}`,
+      `Protocolado ${govRecord.code} para ${superiorPos?.title ?? 'Direção Executiva'}`,
+      ROLE_DEFINITIONS[role].label,
+      AUTHORITY_LABELS[ROLE_DEFINITIONS[role].authorityLevel],
+      task.projectId,
+      task.sourceConversationId
+    );
+    persistDatabase();
+    broadcastEvent('task:updated', task);
+    broadcastEvent('governance:updated', govRecord);
+    res.json({ task, governanceRecord: govRecord, escalatedTo: superiorPos?.title ?? 'Direção Executiva' });
   });
 
   // ===========================================================================
@@ -975,10 +1262,18 @@ async function startServer() {
       monthlyBudgetBRL?: number;
       tools?: string[];
     };
-    const bp = AGENCY_AGENTS_283.find((a) => a.id === body.blueprintId);
+    const rawBp = AGENCY_AGENTS_283.find((a) => a.id === body.blueprintId);
+    const bp = rawBp ? resolveAgentBlueprint(rawBp, db.blueprintOverrides) : undefined;
     const proj = db.projects.find((p) => p.id === body.projectId);
     if (!bp || !proj) {
       res.status(400).json({ error: 'Blueprint ou projeto inválido.' });
+      return;
+    }
+    const homStatus = db.homologationOverrides[bp.id] ?? bp.homologationStatus;
+    if (homStatus !== 'homologado') {
+      res.status(400).json({
+        error: `Perfil "${bp.code} — ${bp.name}" ainda está "${homStatus}". Homologue o perfil antes de instanciar no runtime.`,
+      });
       return;
     }
 
@@ -1056,7 +1351,7 @@ async function startServer() {
     res.json({ instance: inst });
   });
 
-  app.post('/api/runtime/agents/:id/heartbeat', (req, res) => {
+  app.post('/api/runtime/agents/:id/heartbeat', async (req, res) => {
     const role = getCallerRole(req);
     const inst = db.operationalInstances.find((o) => o.id === req.params.id);
     if (!inst) {
@@ -1066,7 +1361,25 @@ async function startServer() {
     const now = new Date().toISOString();
     const geminiOk = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY');
     const paperclipOk = Boolean(process.env.PAPERCLIP_ENDPOINT);
-    const ready = inst.adapter === 'gemini-server-native' ? geminiOk : paperclipOk;
+
+    let ready = inst.adapter === 'gemini-server-native' ? geminiOk : paperclipOk;
+    let hbSummary = ready
+      ? `Heartbeat validado com provedor ${inst.provider} ativo.`
+      : `Heartbeat registrado; provedor ${inst.adapter} aguardando configuração no servidor.`;
+
+    if (inst.adapter === 'paperclip-http-adapter' && paperclipOk && inst.executionState !== 'pausado') {
+      try {
+        const externalRes = await dispatchPaperclipAdapter({
+          instance: inst,
+          action: 'heartbeat',
+        });
+        ready = externalRes.ok;
+        hbSummary = externalRes.text || 'Heartbeat confirmado via Paperclip HTTP Adapter.';
+      } catch (err) {
+        ready = false;
+        hbSummary = `Falha no heartbeat Paperclip HTTP (${err instanceof Error ? err.message : 'erro'}).`;
+      }
+    }
 
     inst.lastHeartbeat = now;
     inst.executionState = inst.executionState === 'pausado' ? 'pausado' : ready ? 'ativo_pronto' : 'aguardando_paperclip';
@@ -1080,14 +1393,13 @@ async function startServer() {
       status: ready ? 'concluida' : 'integracao_pendente',
       tokensEstimated: 0,
       costBRL: 0,
-      summary: ready
-        ? `Heartbeat validado com provedor ${inst.provider} ativo.`
-        : `Heartbeat registrado; provedor ${inst.adapter} aguardando configuração no servidor.`,
+      summary: hbSummary,
       startedAt: now,
       finishedAt: now,
     };
     db.executionSessions = [sess, ...db.executionSessions];
     persistDatabase();
+    broadcastEvent('agent:status', { instanceId: inst.id, executionState: inst.executionState });
     res.json({ instance: inst, session: sess });
   });
 
@@ -1189,33 +1501,155 @@ async function startServer() {
     res.json({ agentId, status });
   });
 
+  app.patch('/api/agency/blueprints/:id', (req, res) => {
+    const role = getCallerRole(req);
+    if (!ROLE_DEFINITIONS[role].canHomologateAgents) {
+      res.status(403).json({ error: 'Somente IA, Gestão ou Direção pode editar e versionar perfis de agentes.' });
+      return;
+    }
+    const rawBp = AGENCY_AGENTS_283.find((a) => a.id === req.params.id);
+    if (!rawBp) {
+      res.status(404).json({ error: 'Perfil não encontrado na biblioteca.' });
+      return;
+    }
+    const current = resolveAgentBlueprint(rawBp, db.blueprintOverrides);
+    const body = req.body as Partial<AgentBlueprintOverride>;
+    const nextVersion = bumpSemverPatch(current.version);
+    const nextOverride: AgentBlueprintOverride = {
+      ...(db.blueprintOverrides[rawBp.id] ?? {}),
+      ...body,
+      version: nextVersion,
+      updatedAt: new Date().toISOString().slice(0, 10),
+      updatedBy: ROLE_DEFINITIONS[role].label,
+    };
+    db.blueprintOverrides[rawBp.id] = nextOverride;
+    appendServerAudit(
+      `Perfil editado e versionado: ${rawBp.code} v${nextVersion}`,
+      `Nome: ${nextOverride.name ?? rawBp.name} · Atualizado por ${ROLE_DEFINITIONS[role].label}`,
+      ROLE_DEFINITIONS[role].label,
+      AUTHORITY_LABELS[ROLE_DEFINITIONS[role].authorityLevel]
+    );
+    persistDatabase();
+    broadcastEvent('agency:blueprint_updated', { blueprintId: rawBp.id, override: nextOverride });
+    res.json({ blueprintId: rawBp.id, override: nextOverride });
+  });
+
   app.post('/api/agency/compositions', (req, res) => {
     const role = getCallerRole(req);
     if (!ROLE_DEFINITIONS[role].canEditProjects) {
       res.status(403).json({ error: 'Permissão insuficiente para gravar composição de equipe.' });
       return;
     }
-    const body = req.body as Omit<TeamCompositionRecord, 'id' | 'createdAt'>;
+    const body = req.body as Omit<TeamCompositionRecord, 'id' | 'createdAt'> & {
+      provisionInstances?: boolean;
+      generateNexusTasks?: boolean;
+    };
+    const { provisionInstances, generateNexusTasks, ...compositionFields } = body;
     const full: TeamCompositionRecord = {
-      ...body,
+      ...compositionFields,
       id: `cmp-${Date.now()}`,
       createdAt: new Date().toISOString().slice(0, 10),
     };
     db.compositions = [full, ...db.compositions];
-    db.projects = db.projects.map((p) =>
-      p.id === body.projectId
-        ? { ...p, selectedAgentIds: body.selectedBlueprintIds, updatedAt: new Date().toISOString().slice(0, 10) }
-        : p
-    );
+    const targetProject = db.projects.find((p) => p.id === body.projectId);
+    if (targetProject) {
+      targetProject.selectedAgentIds = body.selectedBlueprintIds;
+      targetProject.updatedAt = new Date().toISOString().slice(0, 10);
+    }
+
+    const createdInstances: OperationalAgentInstance[] = [];
+    const createdTasks: ProjectTask[] = [];
+
+    // Fluxo B: Optional runtime provisioning for homologated agents in composition
+    if (provisionInstances && targetProject && ROLE_DEFINITIONS[role].canHomologateAgents) {
+      for (const bpId of body.selectedBlueprintIds) {
+        const alreadyExists = db.operationalInstances.some(
+          (o) => o.projectId === targetProject.id && o.blueprintId === bpId
+        );
+        if (alreadyExists) continue;
+        const rawBp = AGENCY_AGENTS_283.find((a) => a.id === bpId);
+        if (!rawBp) continue;
+        const homStatus = db.homologationOverrides[bpId] ?? rawBp.homologationStatus;
+        if (homStatus !== 'homologado') continue;
+        const bp = resolveAgentBlueprint(rawBp, db.blueprintOverrides);
+        const inst: OperationalAgentInstance = {
+          id: `op-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          blueprintId: bp.id,
+          blueprintCode: bp.code,
+          instanceName: `${targetProject.code}-${bp.code}-Squad`,
+          division: bp.division,
+          projectId: targetProject.id,
+          projectName: targetProject.name,
+          runtimeEngine: 'TokenizAi Native Orchestrator',
+          provider: 'Google Gemini',
+          model: 'gemini-4-hydrogen',
+          adapter: 'gemini-server-native',
+          tools: ['task-update', 'project-context-read'],
+          permissions: [`read:project-${targetProject.id}`, 'comment:chat'],
+          credentialRef: 'ENV:GEMINI_API_KEY',
+          envRefKeys: ['GEMINI_API_KEY'],
+          maxExecutionsPerDay: 100,
+          monthlyBudgetBRL: 2500,
+          spentBudgetBRL: 0,
+          heartbeatIntervalSec: 300,
+          executionState: 'ativo_pronto',
+          assignedTasksCount: 0,
+          guardrailPolicy: 'Revisão humana obrigatória em decisões críticas',
+          lastHeartbeat: new Date().toISOString(),
+          origin: 'real_local',
+        };
+        db.operationalInstances = [inst, ...db.operationalInstances];
+        if (!targetProject.operationalInstanceIds.includes(inst.id)) {
+          targetProject.operationalInstanceIds = [...targetProject.operationalInstanceIds, inst.id];
+        }
+        createdInstances.push(inst);
+      }
+    }
+
+    // Fluxo B: Optional NEXUS phase task generation from runbooks of selected blueprints
+    if (generateNexusTasks && targetProject) {
+      const selectedBps = AGENCY_AGENTS_283.filter((a) =>
+        body.selectedBlueprintIds.includes(a.id)
+      ).map((a) => resolveAgentBlueprint(a, db.blueprintOverrides));
+
+      selectedBps.slice(0, 5).forEach((bp, idx) => {
+        const linkedInstance = db.operationalInstances.find(
+          (o) => o.projectId === targetProject.id && o.blueprintId === bp.id
+        );
+        const phase = bp.nexusGates[0] ?? 'Execution';
+        const firstRunbookStep = bp.runbook[0] ?? bp.specialty;
+        const task: ProjectTask = {
+          id: `tsk-nx-${Date.now()}-${idx}`,
+          projectId: targetProject.id,
+          title: `[NEXUS ${phase}] ${bp.code} · ${firstRunbookStep.slice(0, 70)}`,
+          description: `Gerada automaticamente via Composição de Equipe (${bp.name}). Metodologia: ${bp.methodology}.`,
+          assigneeId: linkedInstance?.id ?? targetProject.leadId,
+          assigneeName: linkedInstance ? linkedInstance.instanceName : targetProject.leadName,
+          assigneeKind: linkedInstance ? 'agente_operacional' : 'humano',
+          delegatedBy: ROLE_DEFINITIONS[role].label,
+          status: linkedInstance ? 'atribuida' : 'planejada',
+          dueDate: new Date(Date.now() + (idx + 3) * 86400000).toISOString().slice(0, 10),
+          priority: idx === 0 ? 'alta' : 'média',
+          completionCriteria: `Evidência aderente ao gate NEXUS ${phase} (${bp.code}).`,
+        };
+        if (linkedInstance) {
+          linkedInstance.assignedTasksCount += 1;
+        }
+        db.tasks = [task, ...db.tasks];
+        createdTasks.push(task);
+        broadcastEvent('task:updated', task);
+      });
+    }
+
     appendServerAudit(
       `Composição de equipe aprovada para projeto`,
-      `${body.selectedBlueprintIds.length} perfis · Cobertura ${body.coveragePercent}%`,
+      `${body.selectedBlueprintIds.length} perfis · Cobertura ${body.coveragePercent}% · ${createdInstances.length} instâncias · ${createdTasks.length} tarefas NEXUS`,
       ROLE_DEFINITIONS[role].label,
       AUTHORITY_LABELS[ROLE_DEFINITIONS[role].authorityLevel],
       body.projectId
     );
     persistDatabase();
-    res.json({ composition: full });
+    res.json({ composition: full, createdInstances, createdTasks });
   });
 
   app.post('/api/governance', (req, res) => {

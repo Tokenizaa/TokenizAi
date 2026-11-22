@@ -8,13 +8,28 @@ import {
 } from '../../domain/agencyLibrary';
 import { ROLE_DEFINITIONS } from '../../domain/permissions';
 import { AIAdapter } from '../../services/adapters';
-import type { EnterpriseState, TeamCompositionRecord, UserRole } from '../../types/enterprise';
+import type {
+  EnterpriseState,
+  OperationalAgentInstance,
+  ProjectTask,
+  TeamCompositionRecord,
+  UserRole,
+} from '../../types/enterprise';
 
 interface TeamComposerModuleProps {
   state: EnterpriseState;
   activeRole: UserRole;
   initialProjectId?: string;
-  onSaveComposition: (composition: Omit<TeamCompositionRecord, 'id' | 'createdAt'>) => void;
+  onSaveComposition: (
+    composition: Omit<TeamCompositionRecord, 'id' | 'createdAt'> & {
+      provisionInstances?: boolean;
+      generateNexusTasks?: boolean;
+    }
+  ) => Promise<{
+    composition: TeamCompositionRecord;
+    createdInstances?: OperationalAgentInstance[];
+    createdTasks?: ProjectTask[];
+  }>;
 }
 
 export const TeamComposerModule: React.FC<TeamComposerModuleProps> = ({
@@ -29,6 +44,8 @@ export const TeamComposerModule: React.FC<TeamComposerModuleProps> = ({
   const [selectedIds, setSelectedIds] = useState<string[]>(
     selectedProject?.selectedAgentIds ?? []
   );
+  const [provisionInstances, setProvisionInstances] = useState(true);
+  const [generateNexusTasks, setGenerateNexusTasks] = useState(true);
   const [aiAdvisory, setAiAdvisory] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
@@ -87,21 +104,29 @@ export const TeamComposerModule: React.FC<TeamComposerModuleProps> = ({
     }
   };
 
-  const handleSaveHumanDecision = () => {
+  const handleSaveHumanDecision = async () => {
     if (!selectedProject || !coverage) return;
-    onSaveComposition({
-      projectId: selectedProject.id,
-      authorName: ROLE_DEFINITIONS[activeRole].label,
-      selectedBlueprintIds: selectedIds,
-      coveragePercent: coverage.coveragePercent,
-      identifiedGaps: coverage.gaps,
-      deterministicSummary: coverage.complementarityNote,
-      aiNote: aiAdvisory ?? undefined,
-      humanApprovalStatus: 'aprovada',
-    });
-    setSavedNotice(
-      `Decisão humana registrada: ${selectedIds.length} perfis vinculados a ${selectedProject.code} e auditados na Governança.`
-    );
+    try {
+      const res = await onSaveComposition({
+        projectId: selectedProject.id,
+        authorName: ROLE_DEFINITIONS[activeRole].label,
+        selectedBlueprintIds: selectedIds,
+        coveragePercent: coverage.coveragePercent,
+        identifiedGaps: coverage.gaps,
+        deterministicSummary: coverage.complementarityNote,
+        aiNote: aiAdvisory ?? undefined,
+        humanApprovalStatus: 'aprovada',
+        provisionInstances,
+        generateNexusTasks,
+      });
+      const instCount = res.createdInstances?.length ?? 0;
+      const taskCount = res.createdTasks?.length ?? 0;
+      setSavedNotice(
+        `Decisão humana registrada em ${selectedProject.code}: ${selectedIds.length} perfis, ${instCount} nova(s) instância(s) operacional(is) e ${taskCount} tarefa(s) NEXUS gerada(s).`
+      );
+    } catch (err) {
+      setSavedNotice(err instanceof Error ? err.message : 'Erro ao confirmar composição.');
+    }
   };
 
   if (!selectedProject || !coverage) {
@@ -287,11 +312,33 @@ export const TeamComposerModule: React.FC<TeamComposerModuleProps> = ({
           </div>
 
           <div className="pt-3 border-t border-line space-y-3">
-            <p className="text-xs font-semibold text-ink">Decisão Humana & Rastreabilidade</p>
+            <p className="text-xs font-semibold text-ink">Decisão Humana & Provisionamento (Fluxo B)</p>
+            <div className="space-y-2 text-xs text-ink-muted">
+              {ROLE_DEFINITIONS[activeRole].canHomologateAgents && (
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={provisionInstances}
+                    onChange={(e) => setProvisionInstances(e.target.checked)}
+                    className="mt-0.5 rounded border-line"
+                  />
+                  <span>Provisionar instâncias operacionais para perfis homologados selecionados</span>
+                </label>
+              )}
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={generateNexusTasks}
+                  onChange={(e) => setGenerateNexusTasks(e.target.checked)}
+                  className="mt-0.5 rounded border-line"
+                />
+                <span>Gerar tarefas iniciais NEXUS a partir dos runbooks da equipe</span>
+              </label>
+            </div>
             <button
               type="button"
               disabled={!canEdit}
-              onClick={handleSaveHumanDecision}
+              onClick={() => void handleSaveHumanDecision()}
               className="w-full py-2.5 px-4 rounded-lg bg-accent hover:bg-accent-hover text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
             >
               {canEdit ? 'Confirmar Composição no Projeto & Auditar' : 'Sem permissão para alterar projeto'}

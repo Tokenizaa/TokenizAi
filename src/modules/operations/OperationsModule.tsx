@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { Activity, CheckCircle2, MessageSquare, Plus, X } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle2, MessageSquare, Plus, Send, X } from 'lucide-react';
 import { DataOriginNotice } from '../../components/Common/DataOriginNotice';
 import { ROLE_DEFINITIONS } from '../../domain/permissions';
 import { formatDateBR, formatDateTimeBR } from '../../services/enterpriseService';
 import type {
   EnterpriseState,
+  GovernanceRecord,
   ModuleId,
   OperationalAgentInstance,
   ProjectPriority,
@@ -18,6 +19,11 @@ interface OperationsModuleProps {
   activeRole: UserRole;
   onCreateTask: (input: Partial<ProjectTask>) => Promise<void>;
   onUpdateTask: (taskId: string, patch: Partial<ProjectTask>) => Promise<void>;
+  onAddTaskComment: (taskId: string, text: string) => Promise<void>;
+  onEscalateTask: (
+    taskId: string,
+    reason: string
+  ) => Promise<{ task: ProjectTask; governanceRecord: GovernanceRecord; escalatedTo: string }>;
   onOpenChat: (target: { conversationId?: string }) => void;
   onNavigate: (moduleId: ModuleId) => void;
 }
@@ -37,6 +43,8 @@ export const OperationsModule: React.FC<OperationsModuleProps> = ({
   activeRole,
   onCreateTask,
   onUpdateTask,
+  onAddTaskComment,
+  onEscalateTask,
   onOpenChat,
   onNavigate,
 }) => {
@@ -54,6 +62,10 @@ export const OperationsModule: React.FC<OperationsModuleProps> = ({
 
   const [closingTask, setClosingTask] = useState<ProjectTask | null>(null);
   const [evidenceInput, setEvidenceInput] = useState('');
+  const [escalatingTask, setEscalatingTask] = useState<ProjectTask | null>(null);
+  const [escalationReason, setEscalationReason] = useState('');
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const [commentDraft, setCommentDraft] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const canEdit = ROLE_DEFINITIONS[activeRole].canEditProjects;
@@ -124,6 +136,31 @@ export const OperationsModule: React.FC<OperationsModuleProps> = ({
       setFeedback('Tarefa concluída com evidência registrada.');
     } catch (err) {
       setFeedback(err instanceof Error ? err.message : 'Erro ao concluir tarefa.');
+    }
+  };
+
+  const handleConfirmEscalation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!escalatingTask || !escalationReason.trim()) return;
+    try {
+      const res = await onEscalateTask(escalatingTask.id, escalationReason.trim());
+      setEscalatingTask(null);
+      setEscalationReason('');
+      setFeedback(
+        `Tarefa escalonada para ${res.escalatedTo} e protocolada em Governança (${res.governanceRecord.code}).`
+      );
+    } catch (err) {
+      setFeedback(err instanceof Error ? err.message : 'Erro ao escalonar tarefa.');
+    }
+  };
+
+  const handlePostComment = async (taskId: string) => {
+    if (!commentDraft.trim()) return;
+    try {
+      await onAddTaskComment(taskId, commentDraft.trim());
+      setCommentDraft('');
+    } catch (err) {
+      setFeedback(err instanceof Error ? err.message : 'Erro ao publicar comentário.');
     }
   };
 
@@ -401,54 +438,122 @@ export const OperationsModule: React.FC<OperationsModuleProps> = ({
           <div className="divide-y divide-line">
             {filteredTasks.map((tsk) => {
               const proj = state.projects.find((p) => p.id === tsk.projectId);
+              const isExpanded = expandedTaskId === tsk.id;
               return (
-                <div key={tsk.id} className="py-3.5 first:pt-0 last:pb-0 flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-ink-subtle">
-                      <span className="font-mono font-semibold text-accent">{proj?.code ?? '—'}</span>
-                      <span>·</span>
-                      <span>{tsk.assigneeKind === 'humano' ? 'Colaborador' : 'Agente Operacional'}</span>
-                      <span>·</span>
-                      <span className="capitalize">{tsk.priority}</span>
-                      <span>·</span>
-                      <span className="font-mono tabular-nums">{formatDateBR(tsk.dueDate)}</span>
-                      {tsk.delegatedBy && <span>· Delegado por {tsk.delegatedBy}</span>}
-                    </div>
-                    <p className="text-sm font-semibold text-ink">{tsk.title}</p>
-                    <p className="text-xs text-ink-muted">
-                      Responsável: <strong>{tsk.assigneeName}</strong> · Critério: {tsk.completionCriteria}
-                    </p>
-                    {tsk.completionEvidence && (
-                      <p className="text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                        Evidência: {tsk.completionEvidence}
+                <div key={tsk.id} className="py-4 first:pt-0 last:pb-0 space-y-2.5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-ink-subtle">
+                        <span className="font-mono font-semibold text-accent">{proj?.code ?? '—'}</span>
+                        <span>·</span>
+                        <span>{tsk.assigneeKind === 'humano' ? 'Colaborador' : 'Agente Operacional'}</span>
+                        <span>·</span>
+                        <span className="capitalize">{tsk.priority}</span>
+                        <span>·</span>
+                        <span className="font-mono tabular-nums">{formatDateBR(tsk.dueDate)}</span>
+                        {tsk.delegatedBy && <span>· Delegado por {tsk.delegatedBy}</span>}
+                      </div>
+                      <p className="text-sm font-semibold text-ink">{tsk.title}</p>
+                      <p className="text-xs text-ink-muted">
+                        Responsável: <strong>{tsk.assigneeName}</strong> · Critério: {tsk.completionCriteria}
                       </p>
-                    )}
-                    {tsk.sourceConversationId && (
-                      <button
-                        type="button"
-                        onClick={() => onOpenChat({ conversationId: tsk.sourceConversationId })}
-                        className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline cursor-pointer"
-                      >
-                        <MessageSquare className="w-3 h-3" />
-                        Ver conversa de origem no Chat
-                      </button>
-                    )}
+                      {tsk.completionEvidence && (
+                        <p className="text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                          Evidência: {tsk.completionEvidence}
+                        </p>
+                      )}
+                      {tsk.escalationNote && (
+                        <p className="text-xs text-amber-700 dark:text-amber-300 flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                          Escalonada: {tsk.escalationNote}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-3 pt-1">
+                        {tsk.sourceConversationId && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenChat({ conversationId: tsk.sourceConversationId })}
+                            className="inline-flex items-center gap-1 text-[11px] text-accent hover:underline cursor-pointer"
+                          >
+                            <MessageSquare className="w-3 h-3" />
+                            Ver conversa no Chat
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setExpandedTaskId(isExpanded ? null : tsk.id)}
+                          className="text-[11px] text-ink-muted hover:text-ink cursor-pointer"
+                        >
+                          Comentários & Revisão ({tsk.comments?.length ?? tsk.commentsCount ?? 0})
+                        </button>
+                        {tsk.status !== 'concluida' && tsk.status !== 'cancelada' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEscalatingTask(tsk);
+                              setEscalationReason('');
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] text-amber-700 dark:text-amber-300 hover:underline cursor-pointer"
+                          >
+                            <AlertTriangle className="w-3 h-3" />
+                            Escalonar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <select
+                      value={tsk.status}
+                      disabled={!canEdit}
+                      onChange={(e) =>
+                        void handleStatusChange(tsk, e.target.value as TaskLifecycleStatus)
+                      }
+                      className="px-2.5 py-1.5 text-xs rounded-lg border border-line bg-canvas text-ink shrink-0 disabled:opacity-60"
+                    >
+                      {TASK_STATUS_LIST.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  <select
-                    value={tsk.status}
-                    onChange={(e) =>
-                      void handleStatusChange(tsk, e.target.value as TaskLifecycleStatus)
-                    }
-                    className="px-2.5 py-1.5 text-xs rounded-lg border border-line bg-canvas text-ink shrink-0"
-                  >
-                    {TASK_STATUS_LIST.map((opt) => (
-                      <option key={opt.id} value={opt.id}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                  {isExpanded && (
+                    <div className="p-3 rounded-lg border border-line bg-canvas space-y-2.5 text-xs">
+                      {(tsk.comments ?? []).length === 0 ? (
+                        <p className="text-ink-subtle">Nenhum registro de revisão nesta tarefa ainda.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {(tsk.comments ?? []).map((c) => (
+                            <div key={c.id} className="border-b border-line/60 pb-1.5 last:border-b-0 last:pb-0">
+                              <p className="text-[11px] text-ink-subtle">
+                                <strong className="text-ink">{c.authorName}</strong> ({c.authorRole}) · {formatDateTimeBR(c.createdAt)}
+                              </p>
+                              <p className="text-ink mt-0.5">{c.text}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 pt-1">
+                        <input
+                          type="text"
+                          value={commentDraft}
+                          onChange={(e) => setCommentDraft(e.target.value)}
+                          placeholder="Adicionar nota de revisão, bloqueio ou checkpoint..."
+                          className="flex-1 px-2.5 py-1.5 rounded-lg border border-line bg-surface text-ink text-xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void handlePostComment(tsk.id)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-accent text-white text-xs font-semibold cursor-pointer"
+                        >
+                          <Send className="w-3 h-3" />
+                          Registrar
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -523,6 +628,58 @@ export const OperationsModule: React.FC<OperationsModuleProps> = ({
                 className="px-4 py-1.5 rounded-lg bg-accent text-white text-xs font-semibold cursor-pointer"
               >
                 Concluir Tarefa
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Fluxo C: Task Escalation Modal */}
+      {escalatingTask && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40"
+          onClick={() => setEscalatingTask(null)}
+        >
+          <form
+            onSubmit={handleConfirmEscalation}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md p-5 rounded-2xl nc-glass-window space-y-4"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-sm font-bold text-ink">
+                Escalonar Tarefa para Gestor & Governança
+              </h3>
+              <button type="button" onClick={() => setEscalatingTask(null)} className="text-ink-muted cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-2 text-xs">
+              <p className="font-semibold text-ink">{escalatingTask.title}</p>
+              <p className="text-ink-subtle">
+                O sistema marcará a tarefa como bloqueada, identificará o superior imediato no Organograma e protocolará um registro DELIB na Governança.
+              </p>
+              <textarea
+                rows={3}
+                required
+                value={escalationReason}
+                onChange={(e) => setEscalationReason(e.target.value)}
+                placeholder="Descreva o impedimento técnico, risco ou limite de alçada..."
+                className="w-full px-3 py-2 rounded-lg border border-line bg-surface text-ink"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setEscalatingTask(null)}
+                className="px-3 py-1.5 rounded-lg border border-line text-xs text-ink-muted cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold cursor-pointer"
+              >
+                Confirmar Escalonamento
               </button>
             </div>
           </form>

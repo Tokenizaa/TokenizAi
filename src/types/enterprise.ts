@@ -148,6 +148,14 @@ export type TaskLifecycleStatus =
   | 'concluida'
   | 'cancelada';
 
+export interface TaskComment {
+  id: string;
+  authorName: string;
+  authorRole: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface ProjectTask {
   id: string;
   projectId: string;
@@ -162,6 +170,9 @@ export interface ProjectTask {
   priority: ProjectPriority;
   completionCriteria: string;
   completionEvidence?: string;
+  escalationNote?: string;
+  escalatedToPositionId?: string;
+  comments?: TaskComment[];
   subtasks?: Array<{ id: string; title: string; done: boolean }>;
   sourceConversationId?: string;
   sourceMessageId?: string;
@@ -290,6 +301,27 @@ export interface AgentBlueprint {
   homologationStatus: HomologationStatus;
   paperclipCompatible: boolean;
   sourceCatalog: 'Agency Agents (Acervo 283)';
+}
+
+export interface AgentBlueprintOverride {
+  name?: string;
+  specialty?: string;
+  summary?: string;
+  personality?: string;
+  communicationStyle?: string;
+  workStyle?: string;
+  decisionMakingStyle?: string;
+  competencies?: string[];
+  knowledgeAreas?: string[];
+  skills?: string[];
+  responsibilities?: string[];
+  limitations?: string[];
+  methodology?: string;
+  instructions?: string;
+  runbook?: string[];
+  version: string;
+  updatedAt: string;
+  updatedBy: string;
 }
 
 export interface NexusPresetTeam {
@@ -584,4 +616,5 @@ export interface EnterpriseState {
   conversations: ChatConversation[];
   messages: ChatMessage[];
   homologationOverrides: Record<string, HomologationStatus>;
+  blueprintOverrides: Record<string, AgentBlueprintOverride>;
 }

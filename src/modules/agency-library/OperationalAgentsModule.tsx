@@ -11,7 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { DataOriginNotice } from '../../components/Common/DataOriginNotice';
-import { AGENCY_AGENTS_283 } from '../../domain/agencyLibrary';
+import { AGENCY_AGENTS_283, resolveAgentBlueprint } from '../../domain/agencyLibrary';
 import { ROLE_DEFINITIONS } from '../../domain/permissions';
 import { formatBRL, formatDateTimeBR } from '../../services/enterpriseService';
 import type {
@@ -90,13 +90,29 @@ export const OperationalAgentsModule: React.FC<OperationalAgentsModuleProps> = (
   const canHomologate = roleDef.canHomologateAgents;
   const canManageRuntime = roleDef.canManageRuntime;
 
-  const homologatedBlueprints = AGENCY_AGENTS_283.filter(
+  const resolvedCatalog = AGENCY_AGENTS_283.map((a) =>
+    resolveAgentBlueprint(a, state.blueprintOverrides)
+  );
+  const homologatedBlueprints = resolvedCatalog.filter(
     (a) => (state.homologationOverrides[a.id] ?? a.homologationStatus) === 'homologado'
   );
-  const evaluatingBlueprints = AGENCY_AGENTS_283.filter(
+  const evaluatingBlueprints = resolvedCatalog.filter(
     (a) => (state.homologationOverrides[a.id] ?? a.homologationStatus) === 'em_avaliacao'
   );
   const vacantPositions = state.orgPositions.filter((p) => p.holderType === 'vago');
+
+  // Fluxo D: Runtime productivity, token & budget metrics
+  const totalSessions = state.executionSessions.length;
+  const completedSessions = state.executionSessions.filter((s) => s.status === 'concluida').length;
+  const successRatePct =
+    totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 100;
+  const totalTokens = state.executionSessions.reduce((acc, s) => acc + s.tokensEstimated, 0);
+  const totalSpentBRL = state.operationalInstances.reduce((acc, o) => acc + o.spentBudgetBRL, 0);
+  const totalMonthlyBudgetBRL = state.operationalInstances.reduce(
+    (acc, o) => acc + o.monthlyBudgetBRL,
+    0
+  );
+  const iaCostCenter = state.costCenters.find((c) => c.id === 'cc-2');
 
   const [selectedBlueprintId, setSelectedBlueprintId] = useState(homologatedBlueprints[0]?.id ?? 'agent-1');
   const [selectedProjectId, setSelectedProjectId] = useState(state.projects[0]?.id ?? '');
@@ -209,6 +225,46 @@ export const OperationalAgentsModule: React.FC<OperationalAgentsModuleProps> = (
           </button>
         </div>
       )}
+
+      {/* Fluxo D: Performance, Token & Cost Reconciliation KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        <div className="p-5 rounded-2xl border border-line bg-surface">
+          <p className="text-xs font-medium text-ink-subtle">Sessões & Taxa de Sucesso</p>
+          <p className="mt-2 font-display text-2xl font-bold text-ink tabular-nums">
+            {completedSessions}/{totalSessions} ({successRatePct}%)
+          </p>
+          <p className="mt-1 text-xs text-ink-muted">Execuções e heartbeats auditados</p>
+        </div>
+        <div className="p-5 rounded-2xl border border-line bg-surface">
+          <p className="text-xs font-medium text-ink-subtle">Tokens Estimados Processados</p>
+          <p className="mt-2 font-display text-2xl font-bold text-ink tabular-nums">
+            {totalTokens.toLocaleString('pt-BR')}
+          </p>
+          <p className="mt-1 text-xs text-ink-muted">Contabilizado por sessão no servidor</p>
+        </div>
+        <div className="p-5 rounded-2xl border border-line bg-surface">
+          <p className="text-xs font-medium text-ink-subtle">Orçamento Consumido (Agentes)</p>
+          <p className="mt-2 font-display text-2xl font-bold text-ink tabular-nums">
+            {formatBRL(totalSpentBRL)}
+          </p>
+          <p className="mt-1 text-xs text-ink-muted tabular-nums">
+            Teto conjunto: {formatBRL(totalMonthlyBudgetBRL)}
+          </p>
+        </div>
+        <div className="p-5 rounded-2xl border border-line bg-surface">
+          <p className="text-xs font-medium text-ink-subtle">Centro de Custo Fábrica de IA</p>
+          <p className="mt-2 font-display text-2xl font-bold text-ink tabular-nums">
+            {iaCostCenter ? formatBRL(iaCostCenter.spent) : formatBRL(totalSpentBRL)}
+          </p>
+          <button
+            type="button"
+            onClick={() => onNavigate('finance')}
+            className="mt-1 text-xs font-semibold text-accent hover:underline cursor-pointer"
+          >
+            Conciliar no Financeiro
+          </button>
+        </div>
+      </div>
 
       {/* Live Operational Agent Cards with Heartbeat Activity Pulses */}
       <section className="p-6 rounded-2xl border border-line bg-surface space-y-5">

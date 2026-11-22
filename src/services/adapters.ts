@@ -1,4 +1,5 @@
 import type {
+  AgentBlueprintOverride,
   AgentExecutionSession,
   CalendarCommitment,
   ChatConversation,
@@ -12,6 +13,7 @@ import type {
   OperationalAgentInstance,
   OrgPosition,
   ProjectTask,
+  TaskComment,
   TeamCompositionRecord,
   UserRole,
 } from '../types/enterprise';
@@ -200,6 +202,28 @@ export const EnterpriseApiAdapter = {
     });
   },
 
+  addTaskComment(
+    role: UserRole,
+    taskId: string,
+    text: string
+  ): Promise<{ task: ProjectTask; comment: TaskComment }> {
+    return apiRequest(`/api/tasks/${taskId}/comments`, role, {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    });
+  },
+
+  escalateTask(
+    role: UserRole,
+    taskId: string,
+    reason: string
+  ): Promise<{ task: ProjectTask; governanceRecord: GovernanceRecord; escalatedTo: string }> {
+    return apiRequest(`/api/tasks/${taskId}/escalate`, role, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  },
+
   createRuntimeInstance(
     role: UserRole,
     input: {
@@ -283,10 +307,28 @@ export const EnterpriseApiAdapter = {
     });
   },
 
+  updateAgentBlueprint(
+    role: UserRole,
+    blueprintId: string,
+    patch: Partial<AgentBlueprintOverride>
+  ): Promise<{ blueprintId: string; override: AgentBlueprintOverride }> {
+    return apiRequest(`/api/agency/blueprints/${blueprintId}`, role, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
+  },
+
   saveTeamComposition(
     role: UserRole,
-    composition: Omit<TeamCompositionRecord, 'id' | 'createdAt'>
-  ): Promise<{ composition: TeamCompositionRecord }> {
+    composition: Omit<TeamCompositionRecord, 'id' | 'createdAt'> & {
+      provisionInstances?: boolean;
+      generateNexusTasks?: boolean;
+    }
+  ): Promise<{
+    composition: TeamCompositionRecord;
+    createdInstances?: OperationalAgentInstance[];
+    createdTasks?: ProjectTask[];
+  }> {
     return apiRequest('/api/agency/compositions', role, {
       method: 'POST',
       body: JSON.stringify(composition),

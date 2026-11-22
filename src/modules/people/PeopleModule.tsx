@@ -105,6 +105,7 @@ export const PeopleModule: React.FC<PeopleModuleProps> = ({
         name: inst?.instanceName ?? 'Agente Operacional',
         subtitle: inst ? `${inst.blueprintCode} · ${inst.model}` : '',
         instanceId: inst?.id,
+        executionState: inst?.executionState,
       };
     }
     return {
@@ -225,13 +226,44 @@ export const PeopleModule: React.FC<PeopleModuleProps> = ({
                     : 'Cargo Vago'}
                 </span>
               </div>
-              <h4 className="font-display text-sm font-bold text-ink">{pos.title}</h4>
+              <h4 className="font-display text-sm font-bold text-ink flex flex-wrap items-center gap-2">
+                <span>{pos.title}</span>
+                {isAgent && holder.executionState && (
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-sans font-medium text-ink-muted">
+                    <span className="nc-heartbeat-indicator" aria-hidden="true">
+                      {holder.executionState !== 'pausado' && (
+                        <span
+                          className={`nc-heartbeat-ring ${
+                            holder.executionState === 'ativo_pronto'
+                              ? 'bg-emerald-400/65'
+                              : 'bg-amber-400/55'
+                          }`}
+                        />
+                      )}
+                      <span
+                        className={`nc-heartbeat-core ${
+                          holder.executionState === 'ativo_pronto'
+                            ? 'bg-emerald-500'
+                            : holder.executionState === 'pausado'
+                            ? 'bg-rose-500'
+                            : 'bg-amber-500'
+                        }`}
+                      />
+                    </span>
+                    {holder.executionState === 'ativo_pronto'
+                      ? 'Heartbeat ativo'
+                      : holder.executionState === 'pausado'
+                      ? 'Pausado'
+                      : 'Aguardando runtime'}
+                  </span>
+                )}
+              </h4>
               <p className="text-xs text-ink-muted">
                 {holder.name}
                 {holder.subtitle ? ` · ${holder.subtitle}` : ''}
               </p>
               <p className="text-[11px] text-ink-subtle tabular-nums">
-                Alçada orçamentária: {formatBRL(pos.budgetLimitBRL)} · {pos.responsibilities[0]}
+                Alçada orçamentária: {formatBRL(pos.budgetLimitBRL)} · {children.length} subordinado(s) · {pos.responsibilities[0]}
               </p>
             </div>
           </div>

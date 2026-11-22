@@ -1355,4 +1355,5 @@ export const INITIAL_ENTERPRISE_STATE: EnterpriseState = {
     },
   ],
   homologationOverrides: {},
+  blueprintOverrides: {},
 };
