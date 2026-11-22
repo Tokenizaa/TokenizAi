@@ -113,7 +113,7 @@ export const TeamComposerModule: React.FC<TeamComposerModuleProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Contextual Project Selector */}
       <div className="p-5 rounded-xl border border-line bg-surface flex flex-wrap items-center justify-between gap-4">
         <div className="space-y-1 flex-1 min-w-[240px]">

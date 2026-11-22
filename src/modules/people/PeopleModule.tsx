@@ -280,8 +280,8 @@ export const PeopleModule: React.FC<PeopleModuleProps> = ({
   const rootPositions = childrenByParent.get('__root__') ?? [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-base font-semibold text-ink">
             Pessoas, Departamentos & Organograma Dinâmico

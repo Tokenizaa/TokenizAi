@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { CheckCircle2, MessageSquare, Plus, X } from 'lucide-react';
+import { Activity, CheckCircle2, MessageSquare, Plus, X } from 'lucide-react';
 import { DataOriginNotice } from '../../components/Common/DataOriginNotice';
 import { ROLE_DEFINITIONS } from '../../domain/permissions';
-import { formatDateBR } from '../../services/enterpriseService';
+import { formatDateBR, formatDateTimeBR } from '../../services/enterpriseService';
 import type {
   EnterpriseState,
   ModuleId,
+  OperationalAgentInstance,
   ProjectPriority,
   ProjectTask,
   TaskLifecycleStatus,
@@ -127,7 +128,7 @@ export const OperationsModule: React.FC<OperationsModuleProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <DataOriginNotice
         sourceLabel="Gestão nativa de tarefas, delegação humano/agente, critérios de conclusão e evidência obrigatória"
         pendingIntegration="Paperclip External Runtime (opcional)"
@@ -143,32 +144,118 @@ export const OperationsModule: React.FC<OperationsModuleProps> = ({
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl border border-line bg-surface">
-          <p className="text-xs text-ink-subtle">Tarefas Ativas</p>
-          <p className="mt-1.5 font-display text-xl font-bold text-ink tabular-nums">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        <div className="p-6 rounded-2xl border border-line bg-surface">
+          <p className="text-xs font-medium text-ink-subtle">Tarefas Ativas</p>
+          <p className="mt-2 font-display text-2xl font-bold text-ink tabular-nums">
             {openTasks.length}
           </p>
         </div>
-        <div className="p-4 rounded-xl border border-line bg-surface">
-          <p className="text-xs text-ink-subtle">Bloqueadas</p>
-          <p className="mt-1.5 font-display text-xl font-bold text-red-600 dark:text-red-400 tabular-nums">
+        <div className="p-6 rounded-2xl border border-line bg-surface">
+          <p className="text-xs font-medium text-ink-subtle">Bloqueadas</p>
+          <p className="mt-2 font-display text-2xl font-bold text-red-600 dark:text-red-400 tabular-nums">
             {blockedTasks.length}
           </p>
         </div>
-        <div className="p-4 rounded-xl border border-line bg-surface">
-          <p className="text-xs text-ink-subtle">Incidentes Abertos</p>
-          <p className="mt-1.5 font-display text-xl font-bold text-amber-700 dark:text-amber-400 tabular-nums">
+        <div className="p-6 rounded-2xl border border-line bg-surface">
+          <p className="text-xs font-medium text-ink-subtle">Incidentes Abertos</p>
+          <p className="mt-2 font-display text-2xl font-bold text-amber-700 dark:text-amber-300 tabular-nums">
             {openIncidents.length}
           </p>
         </div>
-        <div className="p-4 rounded-xl border border-line bg-surface">
-          <p className="text-xs text-ink-subtle">Agentes em Operação</p>
-          <p className="mt-1.5 font-display text-xl font-bold text-ink tabular-nums">
+        <div className="p-6 rounded-2xl border border-line bg-surface">
+          <p className="text-xs font-medium text-ink-subtle">Agentes em Operação</p>
+          <p className="mt-2 font-display text-2xl font-bold text-ink tabular-nums">
             {state.operationalInstances.length}
           </p>
         </div>
       </div>
+
+      {/* Live Agent Heartbeat Cards */}
+      <section className="p-6 rounded-2xl border border-line bg-surface space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <Activity className="w-5 h-5 text-accent" />
+            <div>
+              <h2 className="text-lg font-semibold text-ink">
+                Agentes em Operação · Atividade de Heartbeat
+              </h2>
+              <p className="text-sm text-ink-subtle">
+                Pulso codificado por cor indicando disponibilidade, espera de runtime ou pausa
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('operational-agents')}
+            className="px-3.5 py-2 rounded-xl border border-line bg-canvas text-xs font-semibold text-ink hover:border-accent cursor-pointer"
+          >
+            Gerenciar Heartbeats
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {state.operationalInstances.map((inst: OperationalAgentInstance) => {
+            const isReady = inst.executionState === 'ativo_pronto';
+            const isPaused = inst.executionState === 'pausado';
+            const coreColor = isReady ? 'bg-emerald-500' : isPaused ? 'bg-rose-500' : 'bg-amber-500';
+            const ringColor = isReady
+              ? 'bg-emerald-400/65'
+              : isPaused
+              ? 'bg-rose-400/20'
+              : 'bg-amber-400/55';
+            const statusTextClass = isReady
+              ? 'text-emerald-700 dark:text-emerald-300'
+              : isPaused
+              ? 'text-rose-700 dark:text-rose-300'
+              : 'text-amber-700 dark:text-amber-300';
+            const statusLabel = isReady
+              ? 'Ativo · Heartbeat nominal'
+              : isPaused
+              ? 'Pausado'
+              : 'Aguardando runtime';
+
+            return (
+              <div
+                key={inst.id}
+                className="p-4 rounded-xl border border-line bg-canvas flex flex-col justify-between gap-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-mono text-xs font-semibold text-accent truncate">
+                      {inst.blueprintCode} · {inst.projectName}
+                    </p>
+                    <p className="text-base font-semibold text-ink truncate mt-0.5">
+                      {inst.instanceName}
+                    </p>
+                    <p className="text-xs text-ink-muted truncate">{inst.model}</p>
+                  </div>
+                  <div className="inline-flex items-center gap-2 shrink-0 pt-0.5">
+                    <span className="nc-heartbeat-indicator" aria-hidden="true">
+                      {!isPaused && <span className={`nc-heartbeat-ring ${ringColor}`} />}
+                      <span className={`nc-heartbeat-core ${coreColor}`} />
+                    </span>
+                    <span className={`text-xs font-semibold ${statusTextClass}`}>{statusLabel}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-line text-xs text-ink-subtle">
+                  <span className="font-mono tabular-nums">
+                    HB: {formatDateTimeBR(inst.lastHeartbeat)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('operational-agents')}
+                    className="text-xs font-semibold text-accent hover:underline cursor-pointer"
+                  >
+                    Inspecionar
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Create & Delegate Form */}
       {showNewForm && (

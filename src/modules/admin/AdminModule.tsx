@@ -63,17 +63,17 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Integrations Status */}
-      <section className="p-5 rounded-xl border border-line bg-surface space-y-4">
+      <section className="p-6 rounded-2xl border border-line bg-surface space-y-5">
         <div>
           <h2 className="text-base font-semibold text-ink">Integrações & Fontes de Verdade</h2>
-          <p className="text-xs text-ink-subtle">
+          <p className="text-xs text-ink-subtle mt-1">
             Nenhuma integração ausente é simulada como ativa. Variáveis de ambiente permanecem isoladas no servidor.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {state.integrations.map((intItem) => {
             const liveActive =
               (intItem.id === 'int-gemini' && health?.integrations.gemini) ||
@@ -108,11 +108,11 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
       </section>
 
       {/* Preferences, Theme, Offline Sync & Push */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <section className="p-5 rounded-xl border border-line bg-surface space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-7">
+        <section className="p-6 rounded-2xl border border-line bg-surface space-y-5">
           <h3 className="text-sm font-semibold text-ink">Aparência, Temas & Acessibilidade</h3>
-          <div className="space-y-4 text-xs">
-            <div className="flex items-center justify-between">
+          <div className="space-y-5 text-xs">
+            <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="font-medium text-ink">Modo de Exibição</p>
                 <p className="text-ink-subtle">Tema claro padrão ou modo escuro inteligente</p>
@@ -120,19 +120,19 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
               <button
                 type="button"
                 onClick={onToggleTheme}
-                className="px-3.5 py-2 rounded-lg border border-line bg-canvas text-ink font-medium cursor-pointer"
+                className="px-3.5 py-2 rounded-xl border border-line bg-canvas text-ink font-medium cursor-pointer"
               >
                 {isDark ? 'Alternar para Claro' : 'Alternar para Escuro'}
               </button>
             </div>
 
             <div>
-              <p className="font-medium text-ink mb-2">Cor de Destaque Corporativa</p>
-              <div className="flex flex-wrap gap-2">
+              <p className="font-medium text-ink mb-2.5">Cor de Destaque Corporativa</p>
+              <div className="flex flex-wrap gap-2.5">
                 {(
                   [
-                    { id: 'amber', label: 'Âmbar NettosCorp (Padrão)' },
-                    { id: 'cobalt', label: 'Cobalto Executivo' },
+                    { id: 'cobalt', label: 'Azul AI Studio (Padrão)' },
+                    { id: 'amber', label: 'Âmbar Executivo' },
                     { id: 'emerald', label: 'Esmeralda Operacional' },
                     { id: 'slate', label: 'Grafite Minimalista' },
                   ] as const
@@ -140,8 +140,9 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
                   <button
                     key={t.id}
                     type="button"
+                    aria-pressed={accentTheme === t.id}
                     onClick={() => onChangeAccent(t.id)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-medium cursor-pointer ${
+                    className={`px-3.5 py-2 rounded-xl border text-xs font-semibold cursor-pointer ${
                       accentTheme === t.id
                         ? 'border-accent bg-accent-soft text-accent-ink'
                         : 'border-line bg-canvas text-ink-muted hover:text-ink'
@@ -171,8 +172,8 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
           </div>
         </section>
 
-        <section className="p-5 rounded-xl border border-line bg-surface space-y-4">
-          <h3 className="text-sm font-semibold text-ink">Modo Offline, Sincronização & PWA</h3>
+        <section className="p-6 rounded-2xl border border-line bg-surface space-y-5">
+          <h3 className="text-base font-semibold text-ink">Modo Offline, Sincronização & PWA</h3>
           <div className="space-y-3 text-xs">
             <div className="flex items-center justify-between">
               <span className="text-ink-muted">Conectividade do dispositivo</span>
@@ -225,10 +226,10 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
       </div>
 
       {/* RBAC Matrix */}
-      <section className="p-5 rounded-xl border border-line bg-surface space-y-4">
-        <div className="flex items-center gap-2">
-          <Shield className="w-4 h-4 text-accent" />
-          <h3 className="text-sm font-semibold text-ink">
+      <section className="p-6 rounded-2xl border border-line bg-surface space-y-5">
+        <div className="flex items-center gap-2.5">
+          <Shield className="w-5 h-5 text-accent" />
+          <h3 className="text-base font-semibold text-ink">
             Matriz de Segurança & Permissões (10 Perfis RBAC)
           </h3>
         </div>

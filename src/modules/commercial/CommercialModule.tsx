@@ -31,7 +31,7 @@ export const CommercialModule: React.FC<CommercialModuleProps> = ({ state, onNav
     .reduce((acc, o) => acc + o.value, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <DataOriginNotice
         sourceLabel="Pipeline comercial, propostas e contratos em base demonstrativa"
         pendingIntegration="CRM Externo & Assinatura Digital"

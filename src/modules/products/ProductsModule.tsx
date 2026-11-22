@@ -14,7 +14,7 @@ export const ProductsModule: React.FC<ProductsModuleProps> = ({ state, onNavigat
   const items = state.products.filter((p) => kindFilter === 'todos' || p.kind === kindFilter);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <DataOriginNotice
         sourceLabel="Catálogo de produtos e serviços separado dos projetos de execução"
         pendingIntegration="Telemetria de Uso & Centro de Custos ERP"

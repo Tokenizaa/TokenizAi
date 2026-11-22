@@ -82,20 +82,20 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
       />
 
       {/* 4-KPI Executive Strip */}
-      <section aria-label="Indicadores Principais" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <section aria-label="Indicadores Principais" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         <button
           type="button"
           onClick={() => onNavigate('finance')}
-          className="text-left p-5 rounded-xl border border-line bg-surface hover:border-line-strong transition-colors cursor-pointer"
+          className="text-left p-6 rounded-2xl border border-line bg-surface transition-all cursor-pointer"
         >
-          <div className="flex items-center justify-between text-xs text-ink-subtle">
+          <div className="flex items-center justify-between text-xs font-medium text-ink-subtle">
             <span>Resultado do Período</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
+            <ArrowUpRight className="w-4 h-4" />
           </div>
-          <p className="mt-2 font-display text-2xl font-bold text-ink tabular-nums">
+          <p className="mt-3 font-display text-3xl font-bold text-ink tabular-nums">
             {formatBRL(netResult)}
           </p>
-          <p className="mt-1.5 text-xs text-ink-muted tabular-nums">
+          <p className="mt-2.5 text-xs text-ink-muted tabular-nums">
             Receita {formatBRL(totalRevenue)} · Despesa {formatBRL(totalExpenses)}
           </p>
         </button>
@@ -103,16 +103,16 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
         <button
           type="button"
           onClick={() => onNavigate('commercial')}
-          className="text-left p-5 rounded-xl border border-line bg-surface hover:border-line-strong transition-colors cursor-pointer"
+          className="text-left p-6 rounded-2xl border border-line bg-surface transition-all cursor-pointer"
         >
-          <div className="flex items-center justify-between text-xs text-ink-subtle">
+          <div className="flex items-center justify-between text-xs font-medium text-ink-subtle">
             <span>Pipeline Ponderado</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
+            <ArrowUpRight className="w-4 h-4" />
           </div>
-          <p className="mt-2 font-display text-2xl font-bold text-ink tabular-nums">
+          <p className="mt-3 font-display text-3xl font-bold text-ink tabular-nums">
             {formatBRL(weightedPipeline)}
           </p>
-          <p className="mt-1.5 text-xs text-ink-muted tabular-nums">
+          <p className="mt-2.5 text-xs text-ink-muted tabular-nums">
             {state.opportunities.filter((o) => o.stage !== 'fechado').length} oportunidades ativas · {state.contracts.length} contratos
           </p>
         </button>
@@ -120,16 +120,16 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
         <button
           type="button"
           onClick={() => onNavigate('projects')}
-          className="text-left p-5 rounded-xl border border-line bg-surface hover:border-line-strong transition-colors cursor-pointer"
+          className="text-left p-6 rounded-2xl border border-line bg-surface transition-all cursor-pointer"
         >
-          <div className="flex items-center justify-between text-xs text-ink-subtle">
+          <div className="flex items-center justify-between text-xs font-medium text-ink-subtle">
             <span>Portfólio & Entregas</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
+            <ArrowUpRight className="w-4 h-4" />
           </div>
-          <p className="mt-2 font-display text-2xl font-bold text-ink tabular-nums">
+          <p className="mt-3 font-display text-3xl font-bold text-ink tabular-nums">
             {activeProjects.length} projetos
           </p>
-          <p className="mt-1.5 text-xs text-ink-muted tabular-nums">
+          <p className="mt-2.5 text-xs text-ink-muted tabular-nums">
             {attentionProjects.length} em atenção · {state.operationalInstances.length} agentes preparados
           </p>
         </button>
@@ -137,34 +137,34 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
         <button
           type="button"
           onClick={() => onNavigate('people')}
-          className="text-left p-5 rounded-xl border border-line bg-surface hover:border-line-strong transition-colors cursor-pointer"
+          className="text-left p-6 rounded-2xl border border-line bg-surface transition-all cursor-pointer"
         >
-          <div className="flex items-center justify-between text-xs text-ink-subtle">
+          <div className="flex items-center justify-between text-xs font-medium text-ink-subtle">
             <span>Capacidade & Risco</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
+            <ArrowUpRight className="w-4 h-4" />
           </div>
-          <p className="mt-2 font-display text-2xl font-bold text-ink tabular-nums">
+          <p className="mt-3 font-display text-3xl font-bold text-ink tabular-nums">
             {avgCapacity}% alocada
           </p>
-          <p className="mt-1.5 text-xs text-ink-muted tabular-nums">
+          <p className="mt-2.5 text-xs text-ink-muted tabular-nums">
             {pendingDecisions.length} decisões pendentes · {openIncidents.length} incidente aberto
           </p>
         </button>
       </section>
 
       {/* Main Executive Two-Column Hierarchy */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-7 items-start">
         {/* Left: Weekly Progress + Predictive AI Brief */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="p-5 rounded-xl border border-line bg-surface">
+        <div className="lg:col-span-7 space-y-7">
+          <div className="p-6 rounded-2xl border border-line bg-surface">
             <WeeklyProgressChart data={state.weeklyProgress} />
           </div>
 
-          <div className="p-5 rounded-xl border border-line bg-surface space-y-4">
+          <div className="p-6 rounded-2xl nc-glow-panel space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 className="text-sm font-semibold text-ink">Síntese Estratégica & Análise Preditiva</h3>
-                <p className="text-xs text-ink-subtle">
+                <h3 className="text-base font-semibold text-ink">Síntese Estratégica & Análise Preditiva</h3>
+                <p className="text-sm text-ink-subtle mt-0.5">
                   Leitura assistida por modelo Gemini sobre o estado atual da organização
                 </p>
               </div>
@@ -219,10 +219,10 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
         </div>
 
         {/* Right: Attention Required + Governance Queue + Commitments */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="p-5 rounded-xl border border-line bg-surface space-y-4">
+        <div className="lg:col-span-5 space-y-7">
+          <div className="p-6 rounded-2xl border border-line bg-surface space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-ink">Atenção Imediata & Decisões</h3>
+              <h3 className="text-base font-semibold text-ink">Atenção Imediata & Decisões</h3>
               <button
                 type="button"
                 onClick={() => onNavigate('governance')}
@@ -301,11 +301,11 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
             </div>
           </div>
 
-          <div className="p-5 rounded-xl border border-line bg-surface space-y-3">
+          <div className="p-6 rounded-2xl border border-line bg-surface space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-accent" />
-                <h3 className="text-sm font-semibold text-ink">Agenda Executiva & Compromissos</h3>
+                <h3 className="text-base font-semibold text-ink">Agenda Executiva & Compromissos</h3>
               </div>
               <span className="text-xs text-ink-subtle">Exportação .ics</span>
             </div>

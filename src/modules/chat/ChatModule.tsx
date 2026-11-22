@@ -430,14 +430,14 @@ export const ChatModule: React.FC<ChatModuleProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Top Action Strip */}
-      <div className="p-4 rounded-xl border border-line bg-surface flex flex-wrap items-center justify-between gap-3">
+      <div className="p-5 rounded-2xl border border-line bg-surface flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-base font-bold text-ink">
             Comunicação Operacional Nativa & Orquestração
           </h2>
-          <p className="text-xs text-ink-subtle">
+          <p className="text-xs text-ink-subtle mt-0.5">
             Chat persistente em tempo real com agentes operacionais, departamentos, projetos e comitês (execução real via Gemini Server-Side)
           </p>
         </div>
@@ -659,9 +659,9 @@ export const ChatModule: React.FC<ChatModuleProps> = ({
       )}
 
       {/* Main Split Inbox + Thread */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch min-h-[620px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch min-h-[640px]">
         {/* Left Inbox */}
-        <aside className="lg:col-span-4 rounded-xl border border-line bg-surface flex flex-col overflow-hidden">
+        <aside className="lg:col-span-4 rounded-2xl border border-line bg-surface flex flex-col overflow-hidden">
           <div className="p-3 border-b border-line space-y-2.5">
             <input
               type="search"
@@ -747,7 +747,7 @@ export const ChatModule: React.FC<ChatModuleProps> = ({
         </aside>
 
         {/* Center Thread */}
-        <section className="lg:col-span-8 rounded-xl border border-line bg-surface flex flex-col overflow-hidden">
+        <section className="lg:col-span-8 rounded-2xl border border-line bg-surface flex flex-col overflow-hidden">
           {!activeConv ? (
             <div className="flex-1 flex items-center justify-center p-8 text-sm text-ink-subtle">
               Selecione ou crie uma conversa para iniciar a comunicação operacional.

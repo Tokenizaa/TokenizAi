@@ -123,34 +123,34 @@ export const AppShell: React.FC<AppShellProps> = ({
   };
 
   const renderSidebarContent = () => (
-    <div className="flex flex-col h-full bg-surface border-r border-line">
-      <div className="px-4 py-4 border-b border-line flex items-center justify-between gap-2">
+    <div className="flex flex-col h-full bg-surface/95 backdrop-blur-md border-r border-line">
+      <div className="px-5 h-[4.25rem] border-b border-line flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={() => {
             onSelectModule('executive');
             setMobileMenuOpen(false);
           }}
-          className="flex items-center gap-2.5 text-left cursor-pointer"
+          className="flex items-center gap-3 text-left cursor-pointer"
         >
-          <div className="w-7 h-7 rounded-lg bg-slate-900 dark:bg-slate-800 flex items-center justify-center border border-amber-500/40 shrink-0">
-            <span className="font-display font-bold text-xs text-white">N</span>
+          <div className="w-9 h-9 rounded-xl nc-glow-panel flex items-center justify-center shrink-0">
+            <span className="font-display font-bold text-sm text-accent">N</span>
           </div>
-          <span className="font-display font-bold text-sm tracking-tight text-ink whitespace-nowrap">
+          <span className="font-display font-bold text-base tracking-tight text-ink whitespace-nowrap">
             NettosCorp · TokenizAi
           </span>
         </button>
         <button
           type="button"
           onClick={() => setMobileMenuOpen(false)}
-          className="lg:hidden p-1.5 rounded-lg text-ink-muted hover:text-ink cursor-pointer"
+          className="lg:hidden p-2 rounded-xl border border-line text-ink-muted hover:text-ink cursor-pointer"
           aria-label="Fechar menu"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-2.5 py-3 space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
         {NAV_GROUPS.map((group) => {
           const items = NAV_ITEMS.filter(
             (item) => item.group === group && canAccessModule(activeRole, item.id)
@@ -163,13 +163,13 @@ export const AppShell: React.FC<AppShellProps> = ({
               <button
                 type="button"
                 onClick={() => toggleGroup(group)}
-                className="w-full flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-ink-subtle hover:text-ink cursor-pointer"
+                className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-ink-subtle hover:text-ink cursor-pointer"
               >
                 <span className="truncate">{group}</span>
-                {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
               {!isCollapsed && (
-                <div className="mt-1 space-y-0.5">
+                <div className="mt-2 space-y-1.5">
                   {items.map((item) => {
                     const Icon = item.icon;
                     const active = item.id === activeModule;
@@ -177,20 +177,27 @@ export const AppShell: React.FC<AppShellProps> = ({
                       <button
                         key={item.id}
                         type="button"
+                        aria-current={active ? 'page' : undefined}
                         onClick={() => {
                           onSelectModule(item.id);
                           setMobileMenuOpen(false);
                         }}
-                        className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-colors cursor-pointer ${
+                        className={`nc-nav-item group w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[15px] cursor-pointer ${
                           active
-                            ? 'bg-accent-soft text-accent-ink font-semibold'
-                            : 'text-ink-muted hover:text-ink hover:bg-surface-subtle font-medium'
+                            ? 'nc-nav-active font-semibold'
+                            : 'font-medium'
                         }`}
                       >
-                        <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-accent' : 'text-ink-subtle'}`} />
+                        <Icon
+                          className={`w-[1.125rem] h-[1.125rem] shrink-0 transition-colors ${
+                            active
+                              ? 'text-accent dark:text-white'
+                              : 'text-ink-subtle group-hover:text-accent dark:group-hover:text-white'
+                          }`}
+                        />
                         <span className="truncate flex-1 text-left">{item.label}</span>
                         {item.id === 'chat' && chatUnreadCount > 0 && (
-                          <span className="min-w-4 h-4 px-1 rounded-full bg-accent text-white text-[10px] font-mono font-semibold flex items-center justify-center tabular-nums">
+                          <span className="min-w-5 h-5 px-1.5 rounded-full bg-accent text-white text-xs font-mono font-semibold flex items-center justify-center tabular-nums">
                             {chatUnreadCount}
                           </span>
                         )}
@@ -204,14 +211,14 @@ export const AppShell: React.FC<AppShellProps> = ({
         })}
       </div>
 
-      <div className="p-3 border-t border-line space-y-2">
-        <label className="block text-[11px] font-medium text-ink-subtle">
+      <div className="p-4 border-t border-line space-y-2.5">
+        <label className="block text-xs font-medium text-ink-subtle">
           Perfil de Acesso (RBAC)
         </label>
         <select
           value={activeRole}
           onChange={(e) => onChangeRole(e.target.value as UserRole)}
-          className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-line bg-canvas text-ink focus:outline-none focus:border-accent"
+          className="w-full px-3 py-2 text-sm rounded-xl border border-line bg-canvas text-ink focus:outline-none focus:border-accent"
           aria-label="Perfil de acesso ativo"
         >
           {Object.values(ROLE_DEFINITIONS).map((r) => (
@@ -226,15 +233,15 @@ export const AppShell: React.FC<AppShellProps> = ({
 
   return (
     <div className="min-h-screen flex bg-canvas text-ink">
-      {/* Desktop compact sidebar */}
-      <aside className="hidden lg:block w-[248px] shrink-0 sticky top-0 h-screen">
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:block w-[288px] shrink-0 sticky top-0 h-screen">
         {renderSidebarContent()}
       </aside>
 
       {/* Mobile sidebar drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
-          <div className="w-[268px] max-w-[85vw] h-full shadow-xl">
+          <div className="w-[280px] max-w-[85vw] h-full shadow-2xl">
             {renderSidebarContent()}
           </div>
           <div className="flex-1 bg-slate-950/40" onClick={() => setMobileMenuOpen(false)} />
@@ -243,35 +250,35 @@ export const AppShell: React.FC<AppShellProps> = ({
 
       {/* Main viewport */}
       <div className="flex-1 min-w-0 flex flex-col">
-        {/* Clean 3-zone Top Header */}
-        <header className="sticky top-0 z-30 bg-surface/95 backdrop-blur-md border-b border-line px-4 lg:px-6 py-3 flex items-center justify-between gap-4">
+        {/* Clean 3-zone AI Studio Top Header */}
+        <header className="sticky top-0 z-30 h-[4.25rem] bg-surface/85 backdrop-blur-xl border-b border-line px-6 lg:px-10 flex items-center justify-between gap-4">
           {/* Zone 1: Breadcrumb */}
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-2 rounded-lg border border-line text-ink-muted hover:text-ink cursor-pointer"
+              className="lg:hidden p-2 rounded-xl border border-line text-ink-muted hover:text-ink cursor-pointer"
               aria-label="Abrir navegação"
             >
               <Menu className="w-4 h-4" />
             </button>
-            <div className="flex items-center gap-2 text-sm min-w-0">
-              <span className="hidden sm:inline text-ink-subtle truncate">{activeNav.group}</span>
+            <div className="flex items-center gap-2.5 text-base min-w-0">
+              <span className="hidden sm:inline text-sm text-ink-subtle truncate">{activeNav.group}</span>
               <span className="hidden sm:inline text-ink-subtle">/</span>
-              <h1 className="font-display font-semibold text-ink truncate">{activeNav.label}</h1>
+              <h1 className="font-display text-lg font-bold text-ink truncate">{activeNav.label}</h1>
             </div>
           </div>
 
-          {/* Zone 2: Utility Controls (Search ⌘K, Sync, Theme, Alerts) */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Zone 2: Utility Controls (Search ⌘K, Chatbot Gemini, Sync, Theme, Alerts) */}
+          <div className="flex items-center gap-2.5 shrink-0">
             <button
               type="button"
               onClick={onOpenCommandPalette}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-line bg-canvas text-xs text-ink-muted hover:text-ink hover:border-line-strong transition-colors cursor-pointer"
+              className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-line bg-canvas/80 text-sm text-ink-muted hover:text-ink hover:border-accent/60 transition-all cursor-pointer"
             >
-              <Search className="w-3.5 h-3.5" />
+              <Search className="w-4 h-4" />
               <span className="hidden md:inline whitespace-nowrap">Buscar ou comando de voz</span>
-              <kbd className="hidden sm:inline font-mono text-[10px] px-1 py-0.5 rounded bg-surface-subtle border border-line">
+              <kbd className="hidden sm:inline font-mono text-xs px-1.5 py-0.5 rounded bg-surface-subtle border border-line">
                 ⌘K
               </kbd>
             </button>
@@ -280,11 +287,13 @@ export const AppShell: React.FC<AppShellProps> = ({
               type="button"
               onClick={onOpenChatbot}
               aria-label="Abrir Chatbot Gemini"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line bg-canvas text-xs font-medium text-ink hover:border-accent transition-colors cursor-pointer whitespace-nowrap"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl nc-glow-panel text-sm font-semibold text-ink transition-all cursor-pointer whitespace-nowrap hover:opacity-95"
             >
-              <Bot className="w-3.5 h-3.5 text-accent" />
+              <Bot className="w-4 h-4 text-accent" />
               <span className="hidden sm:inline">Chatbot Gemini</span>
             </button>
+
+            <span className="nc-btn-divider hidden sm:block" aria-hidden="true" />
 
             {(!isOnline || pendingSyncCount > 0) && (
               <button
@@ -292,7 +301,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                 onClick={onSyncNow}
                 disabled={!isOnline || isSyncing}
                 title={isOnline ? 'Sincronizar fila offline' : 'Modo offline ativo'}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-line text-xs text-ink-muted hover:text-ink cursor-pointer disabled:opacity-60 whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-line text-xs text-ink-muted hover:text-ink cursor-pointer disabled:opacity-60 whitespace-nowrap"
               >
                 {!isOnline ? (
                   <>
@@ -313,7 +322,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                 type="button"
                 onClick={() => setNotifOpen((o) => !o)}
                 aria-label="Notificações corporativas"
-                className="relative p-2 rounded-lg border border-line text-ink-muted hover:text-ink hover:bg-surface-subtle transition-colors cursor-pointer"
+                className="relative p-2 rounded-xl border border-line text-ink-muted hover:text-ink hover:bg-surface-subtle transition-colors cursor-pointer"
               >
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
@@ -369,23 +378,25 @@ export const AppShell: React.FC<AppShellProps> = ({
               type="button"
               onClick={onToggleTheme}
               aria-label={isDark ? 'Ativar tema claro' : 'Ativar modo escuro inteligente'}
-              className="p-2 rounded-lg border border-line text-ink-muted hover:text-ink hover:bg-surface-subtle transition-colors cursor-pointer"
+              className="p-2 rounded-xl border border-line text-ink-muted hover:text-ink hover:bg-surface-subtle transition-colors cursor-pointer"
             >
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
+
+            <span className="nc-btn-divider hidden sm:block" aria-hidden="true" />
 
             {/* Zone 3: 1 Primary Action */}
             <button
               type="button"
               onClick={onPrimaryAction}
-              className="px-3.5 py-1.5 rounded-lg bg-accent hover:bg-accent-hover text-white text-xs font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               Novo Projeto
             </button>
           </div>
         </header>
 
-        <main className="flex-1 px-4 lg:px-8 py-6 max-w-[1440px] w-full mx-auto">
+        <main className="flex-1 px-6 sm:px-9 lg:px-12 py-9 max-w-[1520px] w-full mx-auto">
           {children}
         </main>
       </div>

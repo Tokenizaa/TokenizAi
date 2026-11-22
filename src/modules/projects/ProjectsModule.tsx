@@ -296,7 +296,7 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
     : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <DataOriginNotice
         sourceLabel="Portfólio unificado de projetos empresariais, quality gates NEXUS, orçamento e canais de execução"
         pendingIntegration="GitHub Webhooks & Paperclip Runtime"
@@ -400,9 +400,9 @@ export const ProjectsModule: React.FC<ProjectsModuleProps> = ({
                 type="button"
                 onClick={handleAnalyzeContext}
                 disabled={analyzing}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-900 dark:bg-slate-800 text-white text-xs font-semibold hover:opacity-90 cursor-pointer disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-semibold cursor-pointer disabled:opacity-60"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <Sparkles className="w-3.5 h-3.5" />
                 {analyzing ? 'Analisando contexto...' : 'Analisar Contexto & Sugerir Equipe'}
               </button>
             </div>

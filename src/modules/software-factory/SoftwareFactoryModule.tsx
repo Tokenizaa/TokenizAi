@@ -30,7 +30,7 @@ export const SoftwareFactoryModule: React.FC<SoftwareFactoryModuleProps> = ({ st
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <DataOriginNotice
         sourceLabel="Operação de engenharia de software; repositórios corporativos aguardando token GitHub para dados privados"
         pendingIntegration="GitHub Actions Webhooks & Sonar/CI"
@@ -57,7 +57,7 @@ export const SoftwareFactoryModule: React.FC<SoftwareFactoryModuleProps> = ({ st
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-800 text-white text-xs font-semibold cursor-pointer disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-semibold cursor-pointer disabled:opacity-60"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               Inspecionar

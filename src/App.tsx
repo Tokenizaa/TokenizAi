@@ -68,7 +68,7 @@ export default function App() {
   const [activeModule, setActiveModule] = useState<ModuleId>(() => readInitialModule());
   const [isDark, setIsDark] = useState<boolean>(() => localStorage.getItem('nc_theme') === 'dark');
   const [accentTheme, setAccentTheme] = useState<AccentTheme>(
-    () => (localStorage.getItem('nc_accent') as AccentTheme) || 'amber'
+    () => (localStorage.getItem('nc_accent') as AccentTheme) || 'cobalt'
   );
 
   const [commandOpen, setCommandOpen] = useState(false);

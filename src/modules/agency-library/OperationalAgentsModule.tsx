@@ -46,6 +46,36 @@ interface OperationalAgentsModuleProps {
   onNavigate: (moduleId: ModuleId) => void;
 }
 
+function getHeartbeatMeta(inst: OperationalAgentInstance) {
+  if (inst.executionState === 'ativo_pronto') {
+    const ageMs = Date.now() - new Date(inst.lastHeartbeat).getTime();
+    const isFresh = Number.isFinite(ageMs) && ageMs < 30 * 60 * 1000;
+    return {
+      label: isFresh ? 'Ativo · Pulso recente' : 'Ativo · Em prontidão',
+      coreClass: 'bg-emerald-500',
+      ringClass: 'bg-emerald-400/65',
+      textClass: 'text-emerald-700 dark:text-emerald-300',
+      animate: true,
+    };
+  }
+  if (inst.executionState === 'aguardando_paperclip') {
+    return {
+      label: 'Aguardando Paperclip',
+      coreClass: 'bg-amber-500',
+      ringClass: 'bg-amber-400/55',
+      textClass: 'text-amber-700 dark:text-amber-300',
+      animate: true,
+    };
+  }
+  return {
+    label: 'Pausado',
+    coreClass: 'bg-rose-500',
+    ringClass: 'bg-rose-400/20',
+    textClass: 'text-rose-700 dark:text-rose-300',
+    animate: false,
+  };
+}
+
 export const OperationalAgentsModule: React.FC<OperationalAgentsModuleProps> = ({
   state,
   activeRole,
@@ -164,7 +194,7 @@ export const OperationalAgentsModule: React.FC<OperationalAgentsModuleProps> = (
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <DataOriginNotice
         sourceLabel="Separação entre Identidade (283 Perfis), Cargo Organizacional e Runtime Operacional — instâncias nativas Gemini já executam sessões reais; adaptador Paperclip externo permanece opcional"
         pendingIntegration="Paperclip External Endpoint (PAPERCLIP_ENDPOINT)"
@@ -180,38 +210,187 @@ export const OperationalAgentsModule: React.FC<OperationalAgentsModuleProps> = (
         </div>
       )}
 
+      {/* Live Operational Agent Cards with Heartbeat Activity Pulses */}
+      <section className="p-6 rounded-2xl border border-line bg-surface space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-ink">
+              Monitor de Agentes Operacionais & Pulso Heartbeat ({state.operationalInstances.length})
+            </h2>
+            <p className="text-sm text-ink-subtle mt-1">
+              Visualização em tempo real do estado de execução, último heartbeat e orçamento consumido por instância
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 text-xs text-ink-muted">
+            <span className="inline-flex items-center gap-2">
+              <span className="nc-heartbeat-indicator" aria-hidden="true">
+                <span className="nc-heartbeat-ring bg-emerald-400/65" />
+                <span className="nc-heartbeat-core bg-emerald-500" />
+              </span>
+              Ativo
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="nc-heartbeat-indicator" aria-hidden="true">
+                <span className="nc-heartbeat-ring bg-amber-400/55" />
+                <span className="nc-heartbeat-core bg-amber-500" />
+              </span>
+              Aguardando
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="nc-heartbeat-indicator" aria-hidden="true">
+                <span className="nc-heartbeat-core bg-rose-500" />
+              </span>
+              Pausado
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {state.operationalInstances.map((inst) => {
+            const pos = state.orgPositions.find((p) => p.id === inst.positionId);
+            const hb = getHeartbeatMeta(inst);
+            const budgetPct = Math.min(
+              100,
+              Math.round((inst.spentBudgetBRL / Math.max(inst.monthlyBudgetBRL, 1)) * 100)
+            );
+
+            return (
+              <div
+                key={inst.id}
+                className="p-5 rounded-2xl border border-line bg-surface nc-card-interactive flex flex-col justify-between gap-4"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-mono text-xs font-semibold text-accent truncate">
+                        {inst.blueprintCode} · {inst.projectName}
+                      </p>
+                      <h3 className="font-display text-base font-bold text-ink mt-1 truncate">
+                        {inst.instanceName}
+                      </h3>
+                      <p className="text-xs text-ink-muted truncate mt-0.5">
+                        {pos?.title ?? inst.division}
+                      </p>
+                    </div>
+
+                    <div className="inline-flex items-center gap-2 shrink-0 pt-0.5">
+                      <span className="nc-heartbeat-indicator" aria-hidden="true">
+                        {hb.animate && <span className={`nc-heartbeat-ring ${hb.ringClass}`} />}
+                        <span className={`nc-heartbeat-core ${hb.coreClass}`} />
+                      </span>
+                      <span className={`text-xs font-semibold ${hb.textClass}`}>
+                        {hb.label}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-ink-subtle space-y-1.5 pt-1 border-t border-line">
+                    <div className="flex items-center justify-between gap-2">
+                      <span>Modelo & Motor</span>
+                      <span className="font-mono text-ink truncate max-w-[13rem]">
+                        {inst.model} · {inst.provider}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 tabular-nums">
+                      <span>Último Heartbeat</span>
+                      <span className="font-mono text-ink">{formatDateTimeBR(inst.lastHeartbeat)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 tabular-nums">
+                      <span>Orçamento</span>
+                      <span className="font-mono text-ink">
+                        {formatBRL(inst.spentBudgetBRL)} / {formatBRL(inst.monthlyBudgetBRL)} ({budgetPct}%)
+                      </span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-surface-subtle overflow-hidden">
+                      <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${budgetPct}%` }} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-line">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onOpenChat({ targetInstanceId: inst.id })}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line bg-canvas text-xs font-semibold text-ink cursor-pointer"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-accent" />
+                      Chat
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleHeartbeat(inst.id)}
+                      title="Executar Heartbeat agora"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-line bg-canvas text-xs font-medium text-ink-muted hover:text-ink cursor-pointer"
+                    >
+                      <Activity className="w-3.5 h-3.5 text-accent" />
+                      Executar HB
+                    </button>
+                  </div>
+
+                  {canManageRuntime && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePause(inst)}
+                        title={inst.executionState === 'pausado' ? 'Retomar instância' : 'Pausar instância'}
+                        className="p-2 rounded-xl border border-line bg-canvas text-ink-muted hover:text-ink cursor-pointer"
+                      >
+                        {inst.executionState === 'pausado' ? (
+                          <PlayCircle className="w-4 h-4 text-emerald-500" />
+                        ) : (
+                          <PauseCircle className="w-4 h-4 text-amber-500" />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openConfig(inst)}
+                        title="Configurar runtime, modelo e orçamento"
+                        className="p-2 rounded-xl border border-line bg-canvas text-ink-muted hover:text-ink cursor-pointer"
+                      >
+                        <Settings2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       {/* Homologation Queue */}
-      <section className="p-5 rounded-xl border border-line bg-surface space-y-4">
+      <section className="p-6 rounded-2xl border border-line bg-surface space-y-5">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-semibold text-ink">
+            <h2 className="text-lg font-semibold text-ink">
               Fila de Homologação de Perfis ({evaluatingBlueprints.length} em avaliação)
             </h2>
-            <p className="text-xs text-ink-subtle">
+            <p className="text-sm text-ink-subtle mt-1">
               Apenas perfis homologados pela Direção de IA ou Gestão podem ser instanciados para operação
             </p>
           </div>
-          <span className="font-mono text-xs text-ink-muted tabular-nums">
+          <span className="font-mono text-sm text-ink-muted tabular-nums">
             {homologatedBlueprints.length} homologados
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {evaluatingBlueprints.slice(0, 6).map((ag) => (
-            <div key={ag.id} className="p-3.5 rounded-lg border border-line bg-canvas space-y-2 text-xs">
-              <div className="flex items-center justify-between text-ink-subtle">
+            <div key={ag.id} className="p-4 rounded-xl border border-line bg-canvas space-y-2.5 text-sm">
+              <div className="flex items-center justify-between text-xs text-ink-subtle">
                 <span className="font-mono font-semibold text-ink">
                   {ag.emoji} {ag.code}
                 </span>
                 <span>{ag.division}</span>
               </div>
-              <p className="text-sm font-semibold text-ink">{ag.name}</p>
-              <p className="text-ink-muted line-clamp-2">{ag.methodology}</p>
+              <p className="text-base font-semibold text-ink">{ag.name}</p>
+              <p className="text-xs text-ink-muted line-clamp-2">{ag.methodology}</p>
               {canHomologate && (
                 <button
                   type="button"
                   onClick={() => onSetHomologation(ag, 'homologado')}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-accent text-white font-semibold cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent text-white text-xs font-semibold cursor-pointer"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Aprovar Homologação
@@ -224,10 +403,10 @@ export const OperationalAgentsModule: React.FC<OperationalAgentsModuleProps> = (
 
       {/* Deploy New Operational Instance */}
       {canHomologate && (
-        <section className="p-5 rounded-xl border border-line bg-surface space-y-4">
-          <div className="flex items-center gap-2">
-            <Cpu className="w-4 h-4 text-accent" />
-            <h3 className="text-sm font-semibold text-ink">
+        <section className="p-6 rounded-2xl border border-line bg-surface space-y-5">
+          <div className="flex items-center gap-2.5">
+            <Cpu className="w-5 h-5 text-accent" />
+            <h3 className="text-base font-semibold text-ink">
               Instanciar Agente Operacional (Runtime & Posição)
             </h3>
           </div>
@@ -370,21 +549,24 @@ export const OperationalAgentsModule: React.FC<OperationalAgentsModuleProps> = (
                         <div className="h-full bg-accent rounded-full" style={{ width: `${budgetPct}%` }} />
                       </div>
                     </td>
-                    <td className="py-3 px-3 text-xs">
-                      <span
-                        className={`font-medium capitalize ${
-                          inst.executionState === 'ativo_pronto'
-                            ? 'text-emerald-700 dark:text-emerald-400'
-                            : inst.executionState === 'pausado'
-                            ? 'text-red-600 dark:text-red-400'
-                            : 'text-amber-700 dark:text-amber-400'
-                        }`}
-                      >
-                        {inst.executionState.replace(/_/g, ' ')}
-                      </span>
-                      <p className="text-[11px] text-ink-subtle font-mono">
-                        HB: {formatDateTimeBR(inst.lastHeartbeat)}
-                      </p>
+                    <td className="py-3.5 px-3 text-xs">
+                      {(() => {
+                        const hb = getHeartbeatMeta(inst);
+                        return (
+                          <div className="space-y-1">
+                            <div className="inline-flex items-center gap-2">
+                              <span className="nc-heartbeat-indicator" aria-hidden="true">
+                                {hb.animate && <span className={`nc-heartbeat-ring ${hb.ringClass}`} />}
+                                <span className={`nc-heartbeat-core ${hb.coreClass}`} />
+                              </span>
+                              <span className={`font-semibold ${hb.textClass}`}>{hb.label}</span>
+                            </div>
+                            <p className="text-xs text-ink-subtle font-mono">
+                              HB: {formatDateTimeBR(inst.lastHeartbeat)}
+                            </p>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="py-3 pl-3 text-right">
                       <div className="inline-flex flex-wrap items-center justify-end gap-1.5">

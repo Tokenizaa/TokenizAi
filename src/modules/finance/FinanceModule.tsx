@@ -75,42 +75,42 @@ export const FinanceModule: React.FC<FinanceModuleProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <DataOriginNotice
         sourceLabel="Lançamentos e orçamentos demonstrativos — nenhuma transação bancária real foi executada"
         pendingIntegration="Open Finance, Gateway de Cobrança e Emissor Fiscal"
         onConfigureIntegration={onNavigate}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl border border-line bg-surface">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="p-5 rounded-2xl border border-line bg-surface">
           <p className="text-xs text-ink-subtle">Receitas (Realizado + Previsto)</p>
-          <p className="mt-1.5 font-display text-xl font-bold text-ink tabular-nums">{formatBRL(totals.totalRec)}</p>
-          <p className="mt-1 text-xs text-ink-muted tabular-nums">A receber: {formatBRL(totals.aReceber)}</p>
+          <p className="mt-2 font-display text-xl font-bold text-ink tabular-nums">{formatBRL(totals.totalRec)}</p>
+          <p className="mt-1.5 text-xs text-ink-muted tabular-nums">A receber: {formatBRL(totals.aReceber)}</p>
         </div>
-        <div className="p-4 rounded-xl border border-line bg-surface">
+        <div className="p-5 rounded-2xl border border-line bg-surface">
           <p className="text-xs text-ink-subtle">Despesas (Realizado + Previsto)</p>
-          <p className="mt-1.5 font-display text-xl font-bold text-ink tabular-nums">{formatBRL(totals.totalDesp)}</p>
-          <p className="mt-1 text-xs text-ink-muted tabular-nums">A pagar: {formatBRL(totals.aPagar)}</p>
+          <p className="mt-2 font-display text-xl font-bold text-ink tabular-nums">{formatBRL(totals.totalDesp)}</p>
+          <p className="mt-1.5 text-xs text-ink-muted tabular-nums">A pagar: {formatBRL(totals.aPagar)}</p>
         </div>
-        <div className="p-4 rounded-xl border border-line bg-surface">
+        <div className="p-5 rounded-2xl border border-line bg-surface">
           <p className="text-xs text-ink-subtle">Resultado Operacional</p>
-          <p className={`mt-1.5 font-display text-xl font-bold tabular-nums ${totals.resultado >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600'}`}>
+          <p className={`mt-2 font-display text-xl font-bold tabular-nums ${totals.resultado >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600'}`}>
             {formatBRL(totals.resultado)}
           </p>
-          <p className="mt-1 text-xs text-ink-muted tabular-nums">Margem líquida demonstrativa</p>
+          <p className="mt-1.5 text-xs text-ink-muted tabular-nums">Margem líquida demonstrativa</p>
         </div>
-        <div className="p-4 rounded-xl border border-line bg-surface">
+        <div className="p-5 rounded-2xl border border-line bg-surface">
           <p className="text-xs text-ink-subtle">Conciliação Bancária</p>
-          <p className="mt-1.5 font-display text-xl font-bold text-ink tabular-nums">
+          <p className="mt-2 font-display text-xl font-bold text-ink tabular-nums">
             {totals.conciliatedCount}/{state.financialEntries.length}
           </p>
-          <p className="mt-1 text-xs text-ink-muted">Aguardando conector Open Finance</p>
+          <p className="mt-1.5 text-xs text-ink-muted">Aguardando conector Open Finance</p>
         </div>
       </div>
 
       {/* Ledger & Controls */}
-      <section className="p-5 rounded-xl border border-line bg-surface space-y-4">
+      <section className="p-6 rounded-2xl border border-line bg-surface space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-1 p-1 rounded-lg bg-surface-subtle border border-line">
             {(['todos', 'receita', 'despesa'] as const).map((tab) => (

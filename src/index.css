@@ -1,60 +1,176 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --text-xs: 0.875rem;
+  --text-xs--line-height: 1.45;
+  --text-sm: 0.96875rem;
+  --text-sm--line-height: 1.55;
+  --text-base: 1.09375rem;
+  --text-base--line-height: 1.6;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.45;
+  --text-xl: 1.5rem;
+  --text-xl--line-height: 1.35;
+  --text-2xl: 1.8125rem;
+  --text-2xl--line-height: 1.25;
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 1.2;
+}
+
+@property --nc-beam-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes nc-border-run {
+  0% {
+    --nc-beam-angle: 0deg;
+  }
+  100% {
+    --nc-beam-angle: 360deg;
+  }
+}
+
+@keyframes nc-heartbeat-pulse {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.72;
+  }
+  70% {
+    transform: scale(2.15);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.15);
+    opacity: 0;
+  }
+}
+
 :root {
-  --nc-canvas: #f8fafc;
+  --nc-canvas: #f5f7fc;
   --nc-surface: #ffffff;
-  --nc-surface-subtle: #f1f5f9;
-  --nc-border: #e2e8f0;
-  --nc-border-strong: #cbd5e1;
-  --nc-ink: #0f172a;
-  --nc-ink-muted: #475569;
-  --nc-ink-subtle: #64748b;
-  --nc-accent: #d97706;
-  --nc-accent-hover: #b45309;
-  --nc-accent-soft: #fef3c7;
-  --nc-accent-ink: #92400e;
+  --nc-surface-subtle: #edf2fa;
+  --nc-border: #dce4f0;
+  --nc-border-strong: #bfd0e6;
+  --nc-ink: #0a0f1c;
+  --nc-ink-muted: #273449;
+  --nc-ink-subtle: #475569;
+
+  /* Google AI Studio Cobalt & Cyan (Default) */
+  --nc-accent: #2563eb;
+  --nc-accent-hover: #1d4ed8;
+  --nc-accent-soft: #dbeafe;
+  --nc-accent-ink: #1e3a8a;
+  --nc-glow: #2563eb;
+  --nc-glow-secondary: #06b6d4;
+  --nc-rim: rgba(255, 255, 255, 0.92);
+
+  /* Standardized Dynamic Lighting Tokens */
+  --nc-beam-primary: #2563eb;
+  --nc-beam-secondary: #06b6d4;
+  --nc-beam-halo: rgba(37, 99, 235, 0.42);
+  --nc-beam-thickness: 1.75px;
+  --nc-beam-speed: 5.5s;
+  --nc-beam-speed-active: 3.4s;
+  --nc-beam-opacity-idle: 0.68;
+  --nc-beam-opacity-hover: 1;
+  --nc-beam-opacity-active: 1;
 }
 
 .dark {
-  --nc-canvas: #0b0f17;
-  --nc-surface: #111827;
-  --nc-surface-subtle: #1e293b;
-  --nc-border: #1f2937;
-  --nc-border-strong: #334155;
-  --nc-ink: #f8fafc;
-  --nc-ink-muted: #cbd5e1;
-  --nc-ink-subtle: #94a3b8;
-  --nc-accent: #f59e0b;
-  --nc-accent-hover: #fbbf24;
-  --nc-accent-soft: rgba(245, 158, 11, 0.14);
-  --nc-accent-ink: #fcd34d;
+  --nc-canvas: #070b13;
+  --nc-surface: #0e1625;
+  --nc-surface-subtle: #162136;
+  --nc-border: #22304a;
+  --nc-border-strong: #374b6e;
+
+  /* Pure White High-Contrast Typography in Dark Mode */
+  --nc-ink: #ffffff;
+  --nc-ink-muted: #f1f5f9;
+  --nc-ink-subtle: #dbe4f3;
+
+  --nc-accent: #4f86f7;
+  --nc-accent-hover: #6ea0ff;
+  --nc-accent-soft: rgba(59, 130, 246, 0.22);
+  --nc-accent-ink: #ffffff;
+  --nc-glow: #3b82f6;
+  --nc-glow-secondary: #22d3ee;
+  --nc-rim: rgba(255, 255, 255, 0.14);
+
+  --nc-beam-primary: #3b82f6;
+  --nc-beam-secondary: #22d3ee;
+  --nc-beam-halo: rgba(56, 189, 248, 0.56);
 }
 
 [data-accent="cobalt"] {
   --nc-accent: #2563eb;
   --nc-accent-hover: #1d4ed8;
   --nc-accent-soft: #dbeafe;
-  --nc-accent-ink: #1e40af;
+  --nc-accent-ink: #1e3a8a;
+  --nc-glow: #2563eb;
+  --nc-glow-secondary: #06b6d4;
+  --nc-beam-primary: #2563eb;
+  --nc-beam-secondary: #06b6d4;
+  --nc-beam-halo: rgba(37, 99, 235, 0.42);
 }
 .dark[data-accent="cobalt"] {
-  --nc-accent: #3b82f6;
-  --nc-accent-hover: #60a5fa;
-  --nc-accent-soft: rgba(59, 130, 246, 0.16);
-  --nc-accent-ink: #93c5fd;
+  --nc-accent: #4f86f7;
+  --nc-accent-hover: #6ea0ff;
+  --nc-accent-soft: rgba(59, 130, 246, 0.22);
+  --nc-accent-ink: #ffffff;
+  --nc-glow: #3b82f6;
+  --nc-glow-secondary: #22d3ee;
+  --nc-beam-primary: #3b82f6;
+  --nc-beam-secondary: #22d3ee;
+  --nc-beam-halo: rgba(56, 189, 248, 0.58);
+}
+
+[data-accent="amber"] {
+  --nc-accent: #d97706;
+  --nc-accent-hover: #b45309;
+  --nc-accent-soft: #fef3c7;
+  --nc-accent-ink: #78350f;
+  --nc-glow: #f59e0b;
+  --nc-glow-secondary: #facc15;
+  --nc-beam-primary: #f59e0b;
+  --nc-beam-secondary: #eab308;
+  --nc-beam-halo: rgba(245, 158, 11, 0.44);
+}
+.dark[data-accent="amber"] {
+  --nc-accent: #f59e0b;
+  --nc-accent-hover: #fbbf24;
+  --nc-accent-soft: rgba(245, 158, 11, 0.22);
+  --nc-accent-ink: #ffffff;
+  --nc-glow: #fbbf24;
+  --nc-glow-secondary: #fde047;
+  --nc-beam-primary: #fbbf24;
+  --nc-beam-secondary: #fde047;
+  --nc-beam-halo: rgba(251, 191, 36, 0.56);
 }
 
 [data-accent="emerald"] {
   --nc-accent: #059669;
   --nc-accent-hover: #047857;
   --nc-accent-soft: #d1fae5;
-  --nc-accent-ink: #065f46;
+  --nc-accent-ink: #064e3b;
+  --nc-glow: #10b981;
+  --nc-glow-secondary: #22c55e;
+  --nc-beam-primary: #10b981;
+  --nc-beam-secondary: #22c55e;
+  --nc-beam-halo: rgba(16, 185, 129, 0.44);
 }
 .dark[data-accent="emerald"] {
   --nc-accent: #10b981;
   --nc-accent-hover: #34d399;
-  --nc-accent-soft: rgba(16, 185, 129, 0.16);
-  --nc-accent-ink: #6ee7b7;
+  --nc-accent-soft: rgba(16, 185, 129, 0.22);
+  --nc-accent-ink: #ffffff;
+  --nc-glow: #34d399;
+  --nc-glow-secondary: #4ade80;
+  --nc-beam-primary: #34d399;
+  --nc-beam-secondary: #4ade80;
+  --nc-beam-halo: rgba(52, 211, 153, 0.56);
 }
 
 [data-accent="slate"] {
@@ -62,27 +178,107 @@
   --nc-accent-hover: #1e293b;
   --nc-accent-soft: #e2e8f0;
   --nc-accent-ink: #0f172a;
+  --nc-glow: #475569;
+  --nc-glow-secondary: #94a3b8;
+  --nc-beam-primary: #475569;
+  --nc-beam-secondary: #94a3b8;
+  --nc-beam-halo: rgba(100, 116, 139, 0.4);
 }
 .dark[data-accent="slate"] {
   --nc-accent: #94a3b8;
   --nc-accent-hover: #cbd5e1;
-  --nc-accent-soft: rgba(148, 163, 184, 0.16);
-  --nc-accent-ink: #e2e8f0;
+  --nc-accent-soft: rgba(148, 163, 184, 0.22);
+  --nc-accent-ink: #ffffff;
+  --nc-glow: #cbd5e1;
+  --nc-glow-secondary: #ffffff;
+  --nc-beam-primary: #cbd5e1;
+  --nc-beam-secondary: #ffffff;
+  --nc-beam-halo: rgba(226, 232, 240, 0.5);
 }
 
 @layer base {
+  html {
+    font-size: 16px;
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      font-size: 16.5px;
+    }
+  }
+
   body {
     font-family: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
     background-color: var(--nc-canvas);
+    background-image:
+      radial-gradient(
+        ellipse 85% 45% at 50% -12%,
+        color-mix(in srgb, var(--nc-beam-primary) 11%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 50% 35% at 92% 8%,
+        color-mix(in srgb, var(--nc-beam-secondary) 8%, transparent),
+        transparent 65%
+      );
+    background-attachment: fixed;
     color: var(--nc-ink);
+    letter-spacing: -0.004em;
+  }
+
+  .dark body {
+    color: #ffffff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-image:
+      radial-gradient(
+        ellipse 85% 48% at 50% -14%,
+        color-mix(in srgb, var(--nc-beam-primary) 17%, transparent),
+        transparent 72%
+      ),
+      radial-gradient(
+        ellipse 55% 38% at 92% 6%,
+        color-mix(in srgb, var(--nc-beam-secondary) 12%, transparent),
+        transparent 68%
+      );
   }
 
   h1, h2, h3, h4, .font-display {
     font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    letter-spacing: -0.015em;
+  }
+
+  .dark h1,
+  .dark h2,
+  .dark h3,
+  .dark h4 {
+    color: #ffffff;
   }
 
   .font-mono, code, pre {
     font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+
+  /* Subtle AI Studio scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--nc-border-strong) 80%, transparent) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--nc-border-strong) 85%, transparent);
+    border-radius: 9999px;
   }
 }
 
@@ -97,8 +293,21 @@
 
 .text-accent { color: var(--nc-accent); }
 .text-accent-ink { color: var(--nc-accent-ink); }
-.bg-accent { background-color: var(--nc-accent); }
-.hover\:bg-accent-hover:hover { background-color: var(--nc-accent-hover); }
+.bg-accent {
+  background-color: var(--nc-accent);
+  border: 1px solid color-mix(in srgb, #ffffff 48%, var(--nc-beam-secondary));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    0 0 0 1px color-mix(in srgb, var(--nc-beam-primary) 28%, transparent),
+    0 4px 20px -4px var(--nc-beam-halo);
+}
+.hover\:bg-accent-hover:hover {
+  background-color: var(--nc-accent-hover);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 0 0 1px color-mix(in srgb, var(--nc-beam-secondary) 52%, transparent),
+    0 6px 26px -3px var(--nc-beam-halo);
+}
 .bg-accent-soft { background-color: var(--nc-accent-soft); }
 .border-accent { border-color: var(--nc-accent); }
 
@@ -106,22 +315,533 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* AI Studio inspired luminous translucent overlays (strictly for command windows & drawers) */
+/* ============================================================================
+   1. Dynamic Running-Light Perimeter Beams (nc-border-run)
+   ============================================================================ */
+
+main .bg-surface.border.border-line:not(.fixed):not(.sticky):not(.absolute),
+main .bg-surface.border.border-accent\/40:not(.fixed):not(.sticky):not(.absolute),
+.nc-glow-panel:not(.fixed):not(.sticky):not(.absolute),
+.nc-nav-item:not(.fixed):not(.sticky):not(.absolute) {
+  position: relative;
+}
+
+main .bg-surface.border.border-line,
+main .bg-surface.border.border-accent\/40 {
+  border-radius: 1rem;
+  border-color: color-mix(in srgb, var(--nc-border-strong) 56%, var(--nc-beam-primary) 34%);
+  box-shadow:
+    inset 0 1px 0 var(--nc-rim),
+    0 0 0 1px color-mix(in srgb, var(--nc-beam-primary) 12%, transparent),
+    0 10px 30px -14px rgba(15, 23, 42, 0.1),
+    0 0 26px -12px var(--nc-beam-halo);
+  transition:
+    border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark main .bg-surface.border.border-line,
+.dark main .bg-surface.border.border-accent\/40 {
+  border-color: color-mix(in srgb, var(--nc-border-strong) 58%, var(--nc-beam-primary) 42%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 1px color-mix(in srgb, var(--nc-beam-primary) 18%, transparent),
+    0 16px 36px -16px rgba(0, 0, 0, 0.7),
+    0 0 32px -12px var(--nc-beam-halo);
+}
+
+/* Primary running-light conic beam on main cards */
+main .bg-surface.border.border-line::before,
+main .bg-surface.border.border-accent\/40::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: var(--nc-beam-thickness);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  background: conic-gradient(
+    from var(--nc-beam-angle),
+    transparent 0deg,
+    transparent 210deg,
+    color-mix(in srgb, var(--nc-beam-primary) 48%, transparent) 252deg,
+    var(--nc-beam-primary) 292deg,
+    color-mix(in srgb, var(--nc-beam-secondary) 92%, #ffffff 36%) 324deg,
+    color-mix(in srgb, #ffffff 65%, var(--nc-beam-secondary)) 340deg,
+    color-mix(in srgb, var(--nc-beam-primary) 35%, transparent) 354deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  filter: drop-shadow(0 0 5px var(--nc-beam-halo));
+  opacity: var(--nc-beam-opacity-idle);
+  animation: nc-border-run var(--nc-beam-speed) linear infinite;
+  transition: opacity 180ms ease;
+}
+
+main .bg-surface.border.border-line.overflow-hidden::before,
+main .bg-surface.border.border-accent\/40.overflow-hidden::before {
+  inset: 0;
+}
+
+main .bg-surface.border.border-line:hover::before,
+main .bg-surface.border.border-accent\/40:hover::before {
+  opacity: var(--nc-beam-opacity-hover);
+}
+
+/* Interactive surface cards (KPI tiles, clickable cards) illuminate on hover */
+main button.bg-surface.border.border-line:hover,
+.nc-card-interactive:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--nc-beam-primary) 72%, var(--nc-beam-secondary));
+  box-shadow:
+    inset 0 1px 0 var(--nc-rim),
+    0 0 0 1px color-mix(in srgb, var(--nc-beam-primary) 32%, transparent),
+    0 14px 34px -12px rgba(15, 23, 42, 0.16),
+    0 0 34px -6px var(--nc-beam-halo);
+}
+
+.dark main button.bg-surface.border.border-line:hover,
+.dark .nc-card-interactive:hover {
+  border-color: color-mix(in srgb, var(--nc-beam-secondary) 78%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 0 1px color-mix(in srgb, var(--nc-beam-secondary) 36%, transparent),
+    0 18px 38px -14px rgba(0, 0, 0, 0.78),
+    0 0 38px -6px var(--nc-beam-halo);
+}
+
+/* Inner recessed cards keep subtle luminous hairline without noisy animation */
+main .bg-canvas.border.border-line {
+  border-color: color-mix(in srgb, var(--nc-border) 68%, var(--nc-beam-primary) 26%);
+  box-shadow:
+    inset 0 1px 0 var(--nc-rim),
+    0 0 16px -10px var(--nc-beam-halo);
+}
+
+/* AI Studio Signature Dual-Beam Panel (.nc-glow-panel) */
+.nc-glow-panel {
+  border: 1px solid color-mix(in srgb, var(--nc-beam-primary) 52%, var(--nc-border-strong)) !important;
+  border-radius: 1rem;
+  background-color: var(--nc-surface);
+  box-shadow:
+    inset 0 1px 0 var(--nc-rim),
+    0 0 0 1px color-mix(in srgb, var(--nc-beam-primary) 22%, transparent),
+    0 14px 40px -12px var(--nc-beam-halo),
+    0 4px 18px -8px rgba(15, 23, 42, 0.08) !important;
+}
+
+.nc-glow-panel::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 2px;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  background: conic-gradient(
+    from var(--nc-beam-angle),
+    color-mix(in srgb, var(--nc-beam-primary) 24%, transparent) 0deg,
+    var(--nc-beam-primary) 42deg,
+    color-mix(in srgb, #ffffff 52%, var(--nc-beam-secondary)) 78deg,
+    color-mix(in srgb, var(--nc-beam-primary) 28%, transparent) 122deg,
+    color-mix(in srgb, var(--nc-beam-primary) 16%, transparent) 195deg,
+    var(--nc-beam-primary) 248deg,
+    color-mix(in srgb, #ffffff 52%, var(--nc-beam-secondary)) 292deg,
+    color-mix(in srgb, var(--nc-beam-primary) 24%, transparent) 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  filter: drop-shadow(0 0 6px var(--nc-beam-halo));
+  opacity: 1;
+  animation: nc-border-run var(--nc-beam-speed-active) linear infinite;
+}
+
+.dark .nc-glow-panel {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 0 1px color-mix(in srgb, var(--nc-beam-secondary) 28%, transparent),
+    0 16px 44px -10px var(--nc-beam-halo),
+    0 6px 24px -8px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* ============================================================================
+   2. Sidebar Navigation — Theme-Aware State Lighting System
+   ============================================================================ */
+
+.nc-nav-item {
+  border: 1px solid color-mix(in srgb, var(--nc-border-strong) 56%, var(--nc-beam-primary) 18%);
+  background-color: transparent;
+  color: var(--nc-ink-muted);
+  transition:
+    border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 180ms ease,
+    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 180ms ease,
+    transform 120ms ease;
+}
+
+.nc-nav-item::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 1.75px;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  background: conic-gradient(
+    from var(--nc-beam-angle),
+    transparent 0deg,
+    transparent 190deg,
+    color-mix(in srgb, var(--nc-beam-primary) 55%, transparent) 235deg,
+    var(--nc-beam-primary) 278deg,
+    color-mix(in srgb, #ffffff 56%, var(--nc-beam-secondary)) 318deg,
+    var(--nc-beam-secondary) 342deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0.08;
+  animation: nc-border-run var(--nc-beam-speed-active) linear infinite;
+  animation-play-state: paused;
+  transition: opacity 180ms ease, filter 180ms ease;
+}
+
+/* Inactive Hover State */
+.nc-nav-item:hover:not(.nc-nav-active) {
+  border-color: color-mix(in srgb, var(--nc-beam-primary) 72%, var(--nc-beam-secondary));
+  background-color: color-mix(in srgb, var(--nc-accent-soft) 48%, var(--nc-surface-subtle));
+  color: var(--nc-ink);
+  box-shadow:
+    inset 0 1px 0 var(--nc-rim),
+    0 0 18px -5px var(--nc-beam-halo);
+}
+
+.nc-nav-item:hover:not(.nc-nav-active)::before,
+.nc-nav-item:focus-visible::before {
+  opacity: 0.92;
+  animation-play-state: running;
+  filter: drop-shadow(0 0 5px var(--nc-beam-halo));
+}
+
+.nc-nav-item:active {
+  transform: scale(0.99);
+}
+
+/* Active / Selected Sidebar State */
+.nc-nav-item.nc-nav-active,
+.nc-nav-active {
+  border: 1px solid color-mix(in srgb, var(--nc-beam-primary) 82%, var(--nc-beam-secondary));
+  background: linear-gradient(
+    98deg,
+    color-mix(in srgb, var(--nc-accent-soft) 94%, transparent),
+    color-mix(in srgb, var(--nc-beam-secondary) 16%, var(--nc-accent-soft))
+  );
+  color: var(--nc-accent-ink);
+  box-shadow:
+    inset 0 1px 0 var(--nc-rim),
+    0 0 0 1px color-mix(in srgb, var(--nc-beam-primary) 30%, transparent),
+    0 0 24px -4px var(--nc-beam-halo);
+}
+
+.dark .nc-nav-item.nc-nav-active,
+.dark .nc-nav-active {
+  color: #ffffff;
+  background: linear-gradient(
+    98deg,
+    color-mix(in srgb, var(--nc-beam-primary) 26%, var(--nc-surface-subtle)),
+    color-mix(in srgb, var(--nc-beam-secondary) 18%, var(--nc-surface))
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 0 1px color-mix(in srgb, var(--nc-beam-secondary) 38%, transparent),
+    0 0 28px -4px var(--nc-beam-halo);
+}
+
+.nc-nav-item.nc-nav-active::before,
+.nc-nav-active::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 2px;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  background: conic-gradient(
+    from var(--nc-beam-angle),
+    color-mix(in srgb, var(--nc-beam-primary) 26%, transparent) 0deg,
+    var(--nc-beam-primary) 45deg,
+    color-mix(in srgb, #ffffff 60%, var(--nc-beam-secondary)) 82deg,
+    color-mix(in srgb, var(--nc-beam-primary) 28%, transparent) 128deg,
+    color-mix(in srgb, var(--nc-beam-primary) 20%, transparent) 205deg,
+    var(--nc-beam-primary) 252deg,
+    color-mix(in srgb, #ffffff 60%, var(--nc-beam-secondary)) 296deg,
+    color-mix(in srgb, var(--nc-beam-primary) 26%, transparent) 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 1;
+  animation: nc-border-run var(--nc-beam-speed-active) linear infinite;
+  animation-play-state: running;
+  filter: drop-shadow(0 0 6px var(--nc-beam-halo));
+}
+
+/* ============================================================================
+   3. Luminous Translucent Windows (Command Palette, Drawers, Modals)
+   ============================================================================ */
+
 .nc-glass-window {
-  background-color: color-mix(in srgb, var(--nc-surface) 88%, transparent);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 20px 50px -12px rgba(15, 23, 42, 0.16), 0 0 0 1px color-mix(in srgb, var(--nc-border-strong) 70%, transparent);
+  background-color: color-mix(in srgb, var(--nc-surface) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--nc-beam-primary) 46%, var(--nc-border-strong));
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow:
+    inset 0 1px 0 var(--nc-rim),
+    0 24px 60px -14px rgba(15, 23, 42, 0.24),
+    0 0 42px -8px var(--nc-beam-halo);
+}
+
+.nc-glass-window::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: var(--nc-beam-thickness);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  background: conic-gradient(
+    from var(--nc-beam-angle),
+    color-mix(in srgb, var(--nc-beam-primary) 20%, transparent) 0deg,
+    var(--nc-beam-primary) 55deg,
+    color-mix(in srgb, #ffffff 52%, var(--nc-beam-secondary)) 92deg,
+    color-mix(in srgb, var(--nc-beam-primary) 20%, transparent) 138deg,
+    transparent 230deg,
+    var(--nc-beam-primary) 290deg,
+    color-mix(in srgb, #ffffff 52%, var(--nc-beam-secondary)) 328deg,
+    color-mix(in srgb, var(--nc-beam-primary) 20%, transparent) 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  filter: drop-shadow(0 0 5px var(--nc-beam-halo));
+  opacity: 0.96;
+  animation: nc-border-run 6.5s linear infinite;
 }
 
 .dark .nc-glass-window {
-  background-color: color-mix(in srgb, var(--nc-surface) 84%, transparent);
-  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  background-color: color-mix(in srgb, var(--nc-surface) 90%, transparent);
+  border-color: color-mix(in srgb, var(--nc-beam-secondary) 52%, rgba(255, 255, 255, 0.16));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 28px 70px -12px rgba(0, 0, 0, 0.78),
+    0 0 48px -8px var(--nc-beam-halo);
+}
+
+/* ============================================================================
+   4. Luminous Button Delimiters & Complete Interaction States
+   ============================================================================ */
+
+button[class*="border"]:not([class*="border-t"]):not([class*="border-b"]):not(.fixed):not(.sticky):not(.absolute),
+button.bg-accent:not(.fixed):not(.sticky):not(.absolute),
+button.bg-accent-soft:not(.fixed):not(.sticky):not(.absolute) {
+  position: relative;
+  transition:
+    border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 120ms ease;
+}
+
+/* Secondary / Outlined Buttons */
+button[class*="border"]:not([class*="border-t"]):not([class*="border-b"]):not(.bg-accent):not(.nc-glow-panel):not(.nc-nav-item) {
+  border-color: color-mix(in srgb, var(--nc-beam-primary) 38%, var(--nc-border-strong));
+  box-shadow:
+    inset 0 1px 0 var(--nc-rim),
+    0 0 0 1px color-mix(in srgb, var(--nc-beam-primary) 10%, transparent),
+    0 2px 12px -4px var(--nc-beam-halo);
+}
+
+button[class*="border"]:not([class*="border-t"]):not([class*="border-b"]):not(.bg-accent):not(.nc-glow-panel):not(.nc-nav-item):hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--nc-beam-secondary) 78%, #ffffff 15%);
+  box-shadow:
+    inset 0 1px 0 var(--nc-rim),
+    0 0 0 1px color-mix(in srgb, var(--nc-beam-primary) 34%, transparent),
+    0 0 22px -4px var(--nc-beam-halo);
+}
+
+/* Selected / Active Filter Buttons */
+button[aria-pressed="true"],
+button[aria-selected="true"],
+button.border-accent,
+button.bg-accent-soft {
+  border-color: color-mix(in srgb, var(--nc-beam-primary) 75%, var(--nc-beam-secondary));
+  box-shadow:
+    inset 0 1px 0 var(--nc-rim),
+    0 0 20px -5px var(--nc-beam-halo);
+}
+
+/* Pressed state */
+button:active:not(:disabled):not(.nc-nav-item) {
+  transform: translateY(1px) scale(0.99);
+}
+
+/* Running light beam along button borders */
+button[class*="border"]:not([class*="border-t"]):not([class*="border-b"]):not(.nc-glow-panel):not(.nc-nav-item)::before,
+button.bg-accent::before,
+button.bg-accent-soft::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 1.5px;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  background: conic-gradient(
+    from var(--nc-beam-angle),
+    transparent 0deg,
+    transparent 200deg,
+    color-mix(in srgb, var(--nc-beam-primary) 50%, transparent) 248deg,
+    var(--nc-beam-primary) 292deg,
+    color-mix(in srgb, #ffffff 55%, var(--nc-beam-secondary)) 328deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0.56;
+  animation: nc-border-run 4.8s linear infinite;
+  transition: opacity 160ms ease, filter 160ms ease;
+}
+
+button.bg-accent::before,
+button[aria-pressed="true"]::before,
+button[aria-selected="true"]::before,
+button.border-accent::before,
+button.bg-accent-soft::before {
+  opacity: 0.94;
+  animation-duration: 3.6s;
+  filter: drop-shadow(0 0 4px var(--nc-beam-halo));
+}
+
+button[class*="border"]:not([class*="border-t"]):not([class*="border-b"]):not(.nc-nav-item):hover:not(:disabled)::before,
+button.bg-accent:hover:not(:disabled)::before,
+button.bg-accent-soft:hover:not(:disabled)::before,
+button[class*="border"]:not([class*="border-t"]):not([class*="border-b"]):not(.nc-nav-item):focus-visible::before,
+button.bg-accent:focus-visible::before,
+button.bg-accent-soft:focus-visible::before {
+  opacity: 1;
+  filter: drop-shadow(0 0 5px var(--nc-beam-halo));
+}
+
+/* Disabled buttons must stop intense animation */
+button:disabled {
+  cursor: not-allowed;
+}
+
+button:disabled::before {
+  animation: none !important;
+  opacity: 0.16 !important;
+  filter: none !important;
+}
+
+/* Segmented control trays & button delimiters */
+div[class*="rounded-lg"][class*="border-line"][class*="bg-surface-subtle"],
+div[class*="rounded-lg"][class*="border-line"][class*="bg-canvas"],
+div[class*="rounded-xl"][class*="border-line"][class*="bg-surface-subtle"],
+div[class*="rounded-xl"][class*="border-line"][class*="bg-canvas"] {
+  border-color: color-mix(in srgb, var(--nc-beam-primary) 36%, var(--nc-border-strong));
+  box-shadow:
+    inset 0 1px 0 var(--nc-rim),
+    0 0 16px -6px var(--nc-beam-halo);
+}
+
+div[class*="rounded-lg"][class*="border-line"] > button.bg-surface,
+div[class*="rounded-xl"][class*="border-line"] > button.bg-surface {
+  border: 1px solid color-mix(in srgb, var(--nc-beam-primary) 54%, var(--nc-border-strong));
+  box-shadow:
+    inset 0 1px 0 var(--nc-rim),
+    0 0 14px -4px var(--nc-beam-halo);
+}
+
+/* Crisp vertical luminous delimiter between button groups */
+.nc-btn-divider {
+  width: 1px;
+  height: 1.5rem;
+  flex-shrink: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--nc-beam-secondary) 72%, var(--nc-border-strong)),
+    transparent
+  );
+  box-shadow: 0 0 8px var(--nc-beam-halo);
+}
+
+/* ============================================================================
+   5. Live Agent Heartbeat Status Pulses
+   ============================================================================ */
+
+.nc-heartbeat-indicator {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.65rem;
+  height: 0.65rem;
+  flex-shrink: 0;
+}
+
+.nc-heartbeat-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  animation: nc-heartbeat-pulse 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+.nc-heartbeat-core {
+  position: relative;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+}
+
+/* ============================================================================
+   6. Crisp AI Studio Luminous Focus Rings
+   ============================================================================ */
+
+input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--nc-beam-primary) 82%, transparent) !important;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--nc-beam-primary) 22%, transparent),
+    0 0 18px -4px var(--nc-beam-halo);
+}
+
+button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--nc-beam-secondary) 82%, transparent);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
+    --nc-beam-angle: 45deg;
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

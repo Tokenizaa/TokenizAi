@@ -312,13 +312,13 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
       aria-label="Assistente Multi-Turn Gemini"
     >
       <aside
-        className="w-full max-w-[470px] h-full bg-surface border-l border-line shadow-2xl flex flex-col"
+        className="w-full max-w-[490px] h-full nc-glass-window flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-4 py-3.5 border-b border-line flex items-center justify-between gap-3 bg-surface">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-accent-soft flex items-center justify-center shrink-0">
+        <div className="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl nc-glow-panel flex items-center justify-center shrink-0">
               <Sparkles className="w-4 h-4 text-accent" />
             </div>
             <div className="min-w-0">
@@ -331,22 +331,23 @@ export const GeminiChatbotDrawer: React.FC<GeminiChatbotDrawerProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={handleClearThread}
               disabled={streaming || messages.length === 0}
               title="Iniciar nova conversa para este papel"
-              className="p-2 rounded-lg border border-line text-ink-muted hover:text-ink hover:bg-surface-subtle transition-colors cursor-pointer disabled:opacity-40"
+              className="p-2 rounded-xl border border-line text-ink-muted hover:text-ink hover:bg-surface-subtle transition-colors cursor-pointer disabled:opacity-40"
               aria-label="Nova conversa"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
+            <span className="nc-btn-divider" aria-hidden="true" />
             <button
               type="button"
               onClick={onClose}
               aria-label="Fechar assistente"
-              className="p-2 rounded-lg text-ink-muted hover:text-ink hover:bg-surface-subtle transition-colors cursor-pointer"
+              className="p-2 rounded-xl border border-line text-ink-muted hover:text-ink hover:bg-surface-subtle transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>

@@ -90,13 +90,13 @@ export const AgencyLibraryModule: React.FC<AgencyLibraryModuleProps> = ({
     : [];
 
   return (
-    <div className="space-y-6">
-      <div className="p-5 rounded-xl border border-line bg-surface flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-8">
+      <div className="p-6 rounded-2xl border border-line bg-surface flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-base font-bold text-ink">
             Biblioteca Profissional Agency Agents ({AGENCY_AGENTS_283.length} Perfis)
           </h2>
-          <p className="text-xs text-ink-muted mt-0.5">
+          <p className="text-xs text-ink-muted mt-1">
             Identidade individual completa (slug, arquétipo, personalidade, estilo de comunicação, skills, runbooks e proveniência) separada das instâncias operacionais
           </p>
         </div>
@@ -108,7 +108,7 @@ export const AgencyLibraryModule: React.FC<AgencyLibraryModuleProps> = ({
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
         <div className="md:col-span-5 relative">
           <Search className="w-4 h-4 text-ink-subtle absolute left-3 top-1/2 -translate-y-1/2" />
           <input
