@@ -1,0 +1,687 @@
+openapi: 3.1.0
+info:
+  title: NettosCorp — Catálogo Sync API
+  version: 1.0.0
+  description: |
+    Fase 6 — Pipeline de sincronización del catálogo Agency Agents (GitHub push → diff → apply → rollback).
+
+    Este contrato é a fonte da verdade da API de sync do corpus-baseline de agentes.
+    Cada mudança aditiva (novo campo opcional, novo endpoint, novo parâmetro opcional)
+    é embarcada continuamente dentro da versão v1, sem rompimento de compatibilidade.
+    Qualquer mudança quebradora (remoção, renomeação, mudança de tipo/ formato, parâmetro
+    opcional → obrigatório, mudança de status HTTP de erro) exige nova versão major no
+    caminho da URL (/v2), guia de migração publicado e runway de deprecation.
+
+    ## Versioning
+    - Major version no caminho da URL: /v1, /v2. Apenas mudanças quebradoras incrementam a major.
+    - Mudanças retrocompatíveis são lançadas continuamente dentro de v1 (sem churn de v1.1).
+
+    ## Deprecation runway (nunca um cliff)
+    1. Anuncie — changelog, e-mail a desenvolvedores registrados, guia de migração publicado.
+    2. Sinalize — cabeçalhos `Deprecation` e `Sunset` nas respostas dos endpoints afetados; logue o uso.
+    3. Runway — janela humana (APIs públicas: 6–12+ meses); meça quem ainda chama.
+    4. Monitore — rastreie tráfego restante por consumidor; contate direto os stragglers.
+    5. Ponha no sunset — remova somente após uso próximo de zero e a data passada.
+
+    ## Erros
+    Todas as respostas de erro seguem o esquema `Error`: código estável e legível por máquina
+    (`code`), mensagem para humanos (`message`), detalhes contextuais (`details`) e
+    `request_id` para rastreamento em suporte. Semântica de HTTP status correta (nunca 200 com erro).
+
+    ## Idempotência
+    Operações de escrita (`POST /sync/apply`, `POST /sync/rollback`) aceitam o cabeçalho
+    `Idempotency-Key` para retry seguro. O webhook de GitHub usa `X-GitHub-Delivery` como
+    chave de idempotência natural de entregas duplicadas.
+  contact:
+    name: Platform Engineering — NettosCorp
+    url: mailto:platform@nettoscorp.example
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: https://api.nettoscorp.example/v1
+    description: Produção — versão v1 do contrato
+  - url: http://localhost:3000/v1
+    description: Desenvolvimento local
+tags:
+  - name: sync
+    description: Operações de sincronização do catálogo Agency Agents (webhook, diff, apply, rollback)
+paths:
+  /sync/webhook:
+    post:
+      summary: Recebe push do GitHub e dispara o ciclo de sync
+      description: |
+        Webhook do repositório canônico `msitarzewski/agency-agents`. Valida a assinatura
+        HMAC-SHA256 (`X-Hub-Signature-256`), aceita apenas eventos `push` (`X-GitHub-Event`)
+        e retorna 202 após aceitação para processamento assíncrono. `X-GitHub-Delivery`
+        funciona como chave de idempotência natural de entregas duplicadas.
+      operationId: postSyncWebhook
+      tags: [sync]
+      security:
+        - WebhookSignature: []
+      parameters:
+        - $ref: '#/components/parameters/XGitHubEvent'
+        - $ref: '#/components/parameters/XHubSignature256'
+        - $ref: '#/components/parameters/XGitHubDelivery'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookPushPayload'
+      responses:
+        '202':
+          description: Webhook aceito para processamento assíncrono
+          headers:
+            $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAccepted'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /sync/diff:
+    get:
+      summary: Mostra diff de agentes antes/después com SHA
+      description: |
+        Compara o corpus-baseline local contra o release upstream e retorna os agentes
+        classificados como `new`, `updated`, `removed` ou `unchanged`, cada um com SHA-256
+        do antes e do depois. Use `agent_slug` para filtrar um único agente e
+        `include_unchanged=true` para também receber inalterados.
+      operationId: getSyncDiff
+      tags: [sync]
+      security:
+        - ApiKey: "***"
+      parameters:
+        - $ref: '#/components/parameters/ReleaseSha'
+        - $ref: '#/components/parameters/Since'
+        - $ref: '#/components/parameters/AgentSlug'
+        - $ref: '#/components/parameters/IncludeUnchanged'
+      responses:
+        '200':
+          description: Diff calculado com sucesso
+          headers:
+            $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiffResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /sync/apply:
+    post:
+      summary: Aplica diff no corpus-baseline
+      description: |
+        Aplica um diff previamente obtido em `GET /sync/diff` sobre o corpus-baseline local.
+        Exige `confirm: true` (proteção contra aplicação acidental). Tira um snapshot
+        imutável antes de qualquer mutação, garantindo rollback one-click via
+        `POST /sync/rollback`. Use `Idempotency-Key` para retry seguro de requisições duplicadas.
+      operationId: postSyncApply
+      tags: [sync]
+      security:
+        - ApiKey: "***"
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyRequest'
+      responses:
+        '200':
+          description: Diff aplicado com sucesso
+          headers:
+            $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplyResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /sync/rollback:
+    post:
+      summary: Reverte o corpus-baseline para um snapshot anterior
+      description: |
+        One-click revert: restaura o corpus-baseline ao snapshot indicado por `snapshot_id`.
+        Operação atômica (swap de diretórios) com stash de segurança do baseline atual.
+      operationId: postSyncRollback
+      tags: [sync]
+      security:
+        - ApiKey: "***"
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RollbackRequest'
+      responses:
+        '200':
+          description: Rollback executado com sucesso
+          headers:
+            $ref: '#/components/headers/XRequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RollbackResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  schemas:
+    Error:
+      type: object
+      required: [code, message, request_id]
+      properties:
+        code:
+          type: string
+          description: Código estável e legível por máquina. Nunca altere para um mesmo cenário de falha.
+          example: webhook.invalid_signature
+        message:
+          type: string
+          description: Mensagem em português para humanos.
+          example: "Assinatura HMAC-SHA256 ausente ou inválida no webhook"
+        details:
+          type: object
+          description: Detalhes de campo ou contexto para auto-diagnóstico do integrador.
+          example:
+            header: X-Hub-Signature-256
+            received: sha256=abcd1234...
+        request_id:
+          type: string
+          description: ID de rastreamento da requisição. Informe ao suporte para rastreamento.
+          example: req_a1b2c3d4
+    WebhookPushPayload:
+      type: object
+      required: [ref, before, after, repository, commits]
+      properties:
+        ref:
+          type: string
+          example: refs/heads/main
+        before:
+          type: ["string", "null"]
+          example: "0000000000000000000000000000000000000000"
+        after:
+          type: string
+          example: "8ae6164f..."
+        repository:
+          type: object
+          required: [full_name, owner]
+          properties:
+            full_name:
+              type: string
+              example: msitarzewski/agency-agents
+            owner:
+              type: object
+              required: [login]
+              properties:
+                login:
+                  type: string
+                  example: msitarzewski
+        head_commit:
+          type: ["object", "null"]
+          properties:
+            id:
+              type: string
+            message:
+              type: string
+            timestamp:
+              type: string
+              format: date-time
+        commits:
+          type: array
+          items:
+            type: object
+            required: [id, message, timestamp]
+            properties:
+              id:
+                type: string
+              message:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+        pusher:
+          type: ["object", "null"]
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+      additionalProperties: true
+    AgentSnapshot:
+      type: object
+      required: [slug, sha]
+      properties:
+        slug:
+          type: string
+          example: cia-cadastro-agentes
+        sha:
+          type: string
+          description: SHA-256 do conteúdo completo do arquivo do agente.
+          example: "3f2a9c1e..."
+        relative_path:
+          type: string
+          example: engineering/cia-cadastro-agentes.md
+        division:
+          type: string
+          example: engineering
+        name:
+          type: string
+        version:
+          type: string
+          example: 0.1.0
+        description:
+          type: string
+    DiffEntry:
+      type: object
+      required: [slug, classification, before, after]
+      properties:
+        slug:
+          type: string
+        classification:
+          type: string
+          enum: [new, updated, removed, unchanged]
+        before:
+          anyOf:
+            - $ref: '#/components/schemas/AgentSnapshot'
+            - type: "null"
+        after:
+          anyOf:
+            - $ref: '#/components/schemas/AgentSnapshot'
+            - type: "null"
+    DiffResult:
+      type: object
+      required: [release_sha, generated_at, new, updated, removed, unchanged, summary]
+      properties:
+        release_sha:
+          type: string
+          description: Fingerprint SHA-256 do release upstream (concatena slug:sha ordenados).
+          example: "c3f1a9..."
+        generated_at:
+          type: string
+          format: date-time
+        new:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiffEntry'
+        updated:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiffEntry'
+        removed:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiffEntry'
+        unchanged:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiffEntry'
+        summary:
+          type: object
+          required: [total_local, total_upstream, added, modified, deleted, unchanged]
+          properties:
+            total_local:
+              type: integer
+              minimum: 0
+            total_upstream:
+              type: integer
+              minimum: 0
+            added:
+              type: integer
+              minimum: 0
+            modified:
+              type: integer
+            deleted:
+              type: integer
+              minimum: 0
+            unchanged:
+              type: integer
+              minimum: 0
+    ApplyRequest:
+      type: object
+      required: [release_sha, confirm]
+      properties:
+        release_sha:
+          type: string
+          description: release_sha do diff a aplicar, obtido em GET /sync/diff.
+        confirm:
+          type: boolean
+          description: Deve ser true para aplicar. Proteção contra aplicação acidental.
+          example: true
+        snapshot_label:
+          type: string
+          description: Etiqueta opcional para o snapshot tirado antes de aplicar.
+          example: sync-8ae6164
+    ApplyResult:
+      type: object
+      required: [applied_at, release_sha, written, deleted, skipped, snapshot_id]
+      properties:
+        applied_at:
+          type: string
+          format: date-time
+        release_sha:
+          type: string
+        written:
+          type: array
+          items:
+            type: string
+          description: Caminhos relativos escritos (novos e atualizados).
+        deleted:
+          type: array
+          items:
+            type: string
+          description: Caminhos relativos removidos.
+        skipped:
+          type: array
+          items:
+            type: string
+          description: Caminhos inalterados (não tocados).
+        snapshot_id:
+          type: string
+          description: ID do snapshot tirado antes de aplicar; usado em POST /sync/rollback.
+    RollbackRequest:
+      type: object
+      required: [snapshot_id]
+      properties:
+        snapshot_id:
+          type: string
+          example: snap-1700000000-a1b2c3d4
+    RollbackResult:
+      type: object
+      required: [restored_to, notification_sent]
+      properties:
+        restored_to:
+          $ref: '#/components/schemas/Snapshot'
+        notification_sent:
+          type: boolean
+          example: true
+        previous_baseline_moved_to:
+          type: string
+          description: Caminho do stash do baseline anterior (segurança).
+    Snapshot:
+      type: object
+      required: [id, label, created_at, agent_count, corpus_sha]
+      properties:
+        id:
+          type: string
+          example: snap-1700000000-a1b2c3d4
+        label:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        agent_count:
+          type: integer
+          minimum: 0
+        corpus_sha:
+          type: string
+          description: SHA-256 do fingerprint do corpus no momento do snapshot.
+    WebhookAccepted:
+      type: object
+      required: [accepted, request_id, repository, branch, sha, received_at]
+      properties:
+        accepted:
+          type: boolean
+          example: true
+        request_id:
+          type: string
+        repository:
+          type: object
+          required: [full_name]
+          properties:
+            full_name:
+              type: string
+        branch:
+          type: string
+        sha:
+          type: string
+        received_at:
+          type: string
+          format: date-time
+  parameters:
+    XGitHubEvent:
+      name: X-GitHub-Event
+      in: header
+      required: true
+      schema:
+        type: string
+        enum: [push]
+      example: push
+    XHubSignature256:
+      name: X-Hub-Signature-256
+      in: header
+      required: true
+      schema:
+        type: string
+      example: sha256=abcd1234...
+    XGitHubDelivery:
+      name: X-GitHub-Delivery
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Chave de idempotência da entrega do GitHub.
+      example: 8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+    ReleaseSha:
+      name: release_sha
+      in: query
+      required: false
+      schema:
+        type: string
+    Since:
+      name: since
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+    AgentSlug:
+      name: agent_slug
+      in: query
+      required: false
+      schema:
+        type: string
+    IncludeUnchanged:
+      name: include_unchanged
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+      description: Chave de idempotência para operações de escrita (retry seguro).
+  headers:
+    XRequestId:
+      name: X-Request-ID
+      in: header
+      required: true
+      schema:
+        type: string
+      description: ID de rastreamento da requisição, ecoado em todas as respostas.
+    XRateLimitLimit:
+      name: X-RateLimit-Limit
+      in: header
+      schema:
+        type: integer
+    XRateLimitRemaining:
+      name: X-RateLimit-Remaining
+      in: header
+      schema:
+        type: integer
+    XRateLimitReset:
+      name: X-RateLimit-Reset
+      in: header
+      schema:
+        type: integer
+    RetryAfter:
+      name: Retry-After
+      in: header
+      schema:
+        type: integer
+        minimum: 0
+      description: Segundos até nova tentativa (apenas em respostas 429).
+  responses:
+    BadRequest:
+      description: Requisição inválida (payload ou parâmetros malformados)
+      headers:
+        $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: webhook.invalid_payload
+            message: "Payload do push não passa validação"
+            request_id: req_a1b2c3d4
+    Unauthorized:
+      description: Não autenticado ou credenciais ausentes
+      headers:
+        $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: auth.missing_credentials
+            message: "Credenciais de API ausentes no cabeçalho Authorization"
+            request_id: req_a1b2c3d4
+    Forbidden:
+      description: Repositório não autorizado ou sem permissão para a operação
+      headers:
+        $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: webhook.unauthorized_repository
+            message: "Repositório msitarzewski/agency-agents não é o alvo autorizado"
+            request_id: req_a1b2c3d4
+    NotFound:
+      description: Recurso não encontrado (snapshot, release, agente)
+      headers:
+        $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: rollback.snapshot_not_found
+            message: "Snapshot não encontrado: snap-xyz"
+            request_id: req_a1b2c3d4
+    Conflict:
+      description: Conflito de estado (release já aplicado, operação em andamento)
+      headers:
+        $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: sync.already_applied
+            message: "Release c3f1a9... já foi aplicado ao corpus-baseline"
+            request_id: req_a1b2c3d4
+    Unprocessable:
+      description: Entidade não processável (confirm ausente, pré-condições não atendidas)
+      headers:
+        $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: sync.confirmation_required
+            message: "confirm: true é obrigatório para aplicar o diff"
+            request_id: req_a1b2c3d4
+    TooManyRequests:
+      description: Limite de taxa excedido
+      headers:
+        X-Request-ID:
+          $ref: '#/components/headers/XRequestId'
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+        X-RateLimit-Limit:
+          $ref: '#/components/headers/XRateLimitLimit'
+        X-RateLimit-Remaining:
+          $ref: '#/components/headers/XRateLimitRemaining'
+        X-RateLimit-Reset:
+          $ref: '#/components/headers/XRateLimitReset'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: rate_limit_exceeded
+            message: "Limite de taxa excedido; tente novamente após 30s"
+            request_id: req_a1b2c3d4
+    InternalServerError:
+      description: Erro interno do servidor
+      headers:
+        $ref: '#/components/headers/XRequestId'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: internal_error
+            message: "Erro interno ao processar a requisição"
+            request_id: req_a1b2c3d4
+  securitySchemes:
+    WebhookSignature:
+      type: apiKey
+      in: header
+      name: X-Hub-Signature-256
+      description: Assinatura HMAC-SHA256 do payload do GitHub. Verificada com comparação de tempo constante.
+    ApiKey:
+      type: http
+      scheme: bearer
+      description: Token de API do operador para endpoints de diff, apply e rollback.

@@ -13,8 +13,8 @@
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "packages:build": "pnpm --filter @nettoscorp/shared --filter @nettoscorp/db --filter @nettoscorp/auth --filter @nettoscorp/kernel --filter @nettoscorp/design-tokens --filter @nettoscorp/plugin-sdk --filter @nettoscorp/ui-primitives run build",
-    "packages:check": "pnpm --filter @nettoscorp/shared --filter @nettoscorp/db --filter @nettoscorp/auth --filter @nettoscorp/kernel --filter @nettoscorp/design-tokens --filter @nettoscorp/plugin-sdk --filter @nettoscorp/ui-primitives run check"
+    "packages:build": "pnpm --filter @nettoscorp/shared --filter @nettoscorp/db --filter @nettoscorp/auth --filter @nettoscorp/kernel --filter @nettoscorp/design-tokens --filter @nettoscorp/plugin-sdk --filter @nettoscorp/ui-primitives --filter @nettoscorp/catalog-sync run build",
+    "packages:check": "pnpm --filter @nettoscorp/shared --filter @nettoscorp/db --filter @nettoscorp/auth --filter @nettoscorp/kernel --filter @nettoscorp/design-tokens --filter @nettoscorp/plugin-sdk --filter @nettoscorp/ui-primitives --filter @nettoscorp/catalog-sync run check"
   },
   "dependencies": {
     "@google/genai": "^3.6.1",
@@ -38,6 +38,7 @@
     "@nettoscorp/design-tokens": "workspace:*",
     "@nettoscorp/plugin-sdk": "workspace:*",
     "@nettoscorp/ui-primitives": "workspace:*",
+    "@nettoscorp/catalog-sync": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.1",
     "dotenv": "^17.2.3",

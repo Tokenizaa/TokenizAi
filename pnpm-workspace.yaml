@@ -16,6 +16,7 @@ allowBuilds:
   - '@nettoscorp/design-tokens'
   - '@nettoscorp/plugin-sdk'
   - '@nettoscorp/ui-primitives'
+  - '@nettoscorp/catalog-sync'
   - '@nettoscorp/adapter-claude-local'
   - '@nettoscorp/adapter-codex-local'
   - '@nettoscorp/adapter-cursor-local'
