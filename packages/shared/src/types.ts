@@ -58,6 +58,20 @@ export const AuthorityLevelSchema = z.enum([
 export type AuthorityLevel = z.infer<typeof AuthorityLevelSchema>;
 
 /**
+ * ClearanceLevel — Níveis de classificação de segurança (hierárquicos)
+ * Publico < Restrito < Gerencial < Estrategica < Confidencial
+ */
+export const ClearanceLevelSchema = z.enum([
+  'publico',
+  'restrito',
+  'gerencial',
+  'estratégica',
+  'confidencial',
+]);
+
+export type ClearanceLevel = z.infer<typeof ClearanceLevelSchema>;
+
+/**
  * DataOrigin — Classificação de origem dos dados
  */
 export const DataOriginSchema = z.enum([

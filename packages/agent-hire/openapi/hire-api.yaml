@@ -1,0 +1,520 @@
+openapi: 3.1.0
+info:
+  title: NettosCorp Agent Hire API
+  version: 1.0.0
+  description: |
+    API de contratacao de agentes da Agency (Fase 7 do roadmap NettosCorp).
+    Permite contratar agentes do corpus da Agency (Paperclip) por slug, aplicar
+    mapeamento de divisao AA para papel NettosCorp, provisionar ferramentas em
+    runtimes ACP/MCP e vincular orcamento baseado na autoridade do papel.
+
+    Este contrato e a fonte da verdade. Mudancas quebrantes exigem novo major
+    version (/v2) com periodo de deprecation.
+
+  contact:
+    name: NettosCorp Platform Team
+    email: platform@nettoscorp.example.br
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.nettoscorp.example.br/v1
+    descricao: Producao (v1)
+  - url: http://localhost:3000/api/v1
+    descricao: Desenvolvimento local
+
+paths:
+  /hire:
+    post:
+      operationId: hireAgent
+      summary: Contrata um agente da Agency por slug
+      description: |
+        Fluxo completo: leitura do agente no corpus -> mapeamento de divisao
+        AA para papel NettosCorp -> extensao de frontmatter nettoscorp -> validacao
+        Zod do contrato -> provisionamento de ferramentas (3+ runtimes ACP/MCP)
+        -> vinculacao de orcamento baseado na autoridade do papel.
+
+        Retorna AgentConfig pronto para ser consumido pelo Paperclip server.
+      tags: [hire]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HireRequest'
+      responses:
+        '201':
+          description: Agente contratado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HireResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /hire/corpus/{slug}:
+    get:
+      operationId: getAgentFromCorpus
+      summary: Retorna informacoes de um agente do corpus
+      description: |
+        Le dados brutos de um agente do corpus da Agency (Paperclip ou
+        catalog-sync baselinado). Utile para pre-visualizar antes de contratar.
+      tags: [hire, corpus]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+          example: engineering-senior-developer
+        - in: query
+          name: httpBase
+          schema:
+            type: string
+            format: uri
+          description: URL base para fallback HTTP quando o corpus local nao tem o agente
+      responses:
+        '200':
+          description: Dados do agente no corpus
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorpusAgent'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /hire/budget-policies:
+    get:
+      operationId: listBudgetPolicies
+      summary: Lista politicas de orcamento por papel de autoridade
+      description: |
+        Retorna as politicas de orcamento vinculadas a cada nivel de autoridade
+        (DEFAULT_MONTHLY_BUDGET_BY_AUTHORITY), usadas no bindAgentBudget.
+      tags: [hire, budget]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de politicas de orcamento
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BudgetPolicy'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      format: jwt
+      descricao: |
+        Token JWT obtido via Better Auth + Supabase. Claims obrigatorios:
+        sub, company_id, role, authority_level, clearance_level, modules.
+
+  schemas:
+    HireRequest:
+      type: object
+      required:
+        - slug
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          descricao: Slug do agente no corpus da Agency
+          example: engineering-senior-developer
+        divisionOverride:
+          type: string
+          descricao: Forca uma divisao AA especifica (sobrescreve a do corpus)
+          example: engineering
+        department:
+          type: string
+          descricao: Departamento NettosCorp do agente contratado
+          example: engenharia_software
+        clearance:
+          type: string
+          enum:
+            - publico
+            - restrito
+            - gerencial
+            - estrategica
+            - confidencial
+          descricao: Nivel de classificacao de seguranca
+          example: restrito
+        authority:
+          type: string
+          enum:
+            - executiva_humana
+            - estrategica_delegada
+            - gerencial
+            - operacional
+            - tecnica
+          descricao: Nivel de autoridade do agente
+          example: tecnica
+        knowledge_domains:
+          type: array
+          items:
+            type: string
+          descricao: Dominios de conhecimento do agente
+          example:
+            - typescript
+            - nodejs
+            - react
+        runtimeEngine:
+          type: string
+          enum:
+            - Paperclip Runtime
+            - TokenizAi Native Orchestrator
+          descricao: Runtime de execucao do agente
+          example: Paperclip Runtime
+        projectId:
+          type: string
+          format: uuid
+          descricao: ID do projeto vinculado (opcional)
+        dryRun:
+          type: boolean
+          default: false
+          descricao: Se true, valida e simula sem provisionar ferramentas nem orcamento
+          example: false
+        correlationId:
+          type: string
+          format: uuid
+          descricao: ID de correlacao para rastreamento distribuido (trace_id)
+
+    HireResponse:
+      type: object
+      required:
+        - id
+        - slug
+        - code
+        - name
+        - division
+        - role
+        - nettoscorp
+        - specialty
+        - summary
+        - instructions
+        - tools
+        - permissions
+        - source
+        - hiredAt
+        - toolProvisioning
+        - budgetPolicy
+      properties:
+        id:
+          type: string
+          format: uuid
+          descricao: ID unico da contratacao
+        slug:
+          type: string
+          descricao: Slug do agente contratado
+        code:
+          type: string
+          descricao: Codigo do agente (igual ao slug)
+        name:
+          type: string
+          descricao: Nome de exibicao do agente
+        division:
+          type: string
+          descricao: Divisao AA do agente no corpus
+        role:
+          type: string
+          descricao: Papel NettosCorp mapeado da divisao
+        nettoscorp:
+          $ref: '#/components/schemas/NettoscorpFrontmatter'
+        specialty:
+          type: string
+          descricao: Especialidade do agente
+        summary:
+          type: string
+          descricao: Resumo da funcao do agente
+        instructions:
+          type: string
+          descricao: Instrucoes do agente (sanitizadas contra prompt injection)
+        tools:
+          type: array
+          items:
+            type: string
+          descricao: Ferramentas padrao do agente
+        permissions:
+          type: array
+          items:
+            type: string
+          descricao: Permissoes de minimo privilegio derivadas do modulo
+        rawSource:
+          type: string
+          descricao: Fonte bruta do agente no corpus
+        source:
+          type: string
+          enum:
+            - corpus-baseline
+            - paperclip
+            - http-fallback
+          descricao: Origem dos dados do agente
+        hiredAt:
+          type: string
+          format: date-time
+          descricao: Timestamp da contratacao
+        toolProvisioning:
+          $ref: '#/components/schemas/ToolProvisioningResult'
+        budgetPolicy:
+          $ref: '#/components/schemas/BudgetPolicy'
+
+    NettoscorpFrontmatter:
+      type: object
+      required:
+        - department
+        - clearance
+        - authority
+        - knowledge_domains
+      properties:
+        department:
+          type: string
+          descricao: Departamento NettosCorp
+          example: engenharia_software
+        clearance:
+          type: string
+          enum:
+            - publico
+            - restrito
+            - gerencial
+            - estrategica
+            - confidencial
+          descricao: Nivel de classificacao de seguranca
+        authority:
+          type: string
+          enum:
+            - executiva_humana
+            - estrategica_delegada
+            - gerencial
+            - operacional
+            - tecnica
+          descricao: Nivel de autoridade
+        knowledge_domains:
+          type: array
+          items:
+            type: string
+          descricao: Dominios de conhecimento
+
+    CorpusAgent:
+      type: object
+      required:
+        - slug
+        - name
+        - division
+        - rawSource
+        - source
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        division:
+          type: string
+        rawSource:
+          type: string
+        source:
+          type: string
+          enum:
+            - corpus-baseline
+            - paperclip
+            - http-fallback
+
+    BudgetPolicy:
+      type: object
+      required:
+        - authority
+        - monthlyBudgetBRL
+        - maxExecutionsPerDay
+      properties:
+        authority:
+          type: string
+          enum:
+            - executiva_humana
+            - estrategica_delegada
+            - gerencial
+            - operacional
+            - tecnica
+        monthlyBudgetBRL:
+          type: number
+          format: double
+          minimum: 0
+          descricao: Orcamento mensal em BRL
+        maxExecutionsPerDay:
+          type: integer
+          minimum: 0
+          descricao: Maximo de execucoes por dia
+
+    ToolProvisioningResult:
+      type: object
+      required:
+        - installedCount
+        - runtimes
+        - results
+      properties:
+        installedCount:
+          type: integer
+          minimum: 0
+          descricao: Total de instalacoes realizadas (tools x runtimes)
+        runtimes:
+          type: array
+          items:
+            type: string
+            enum:
+              - mcp-stdio
+              - mcp-http
+              - acp
+          descricao: Runtimes onde as ferramentas foram provisionadas
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolInstallment'
+
+    ToolInstallment:
+      type: object
+      required:
+        - runtime
+        - tool
+        - status
+      properties:
+        runtime:
+          type: string
+          enum:
+            - mcp-stdio
+            - mcp-http
+            - acp
+        tool:
+          type: string
+        status:
+          type: string
+          enum:
+            - installed
+            - skipped
+            - failed
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+        - request_id
+      properties:
+        code:
+          type: string
+          descricao: Codigo de erro estavel, legivel por maquina
+          example: validation_error
+        message:
+          type: string
+          descricao: Mensagem legivel por humanos
+          example: O campo slug e obrigatorio.
+        details:
+          type: object
+          descricao: Detalhes adicionais para autodiagnostico
+          nullable: true
+        request_id:
+          type: string
+          descricao: ID de rastreamento para suporte (echo este ID ao suporte)
+
+  responses:
+    BadRequest:
+      descricao: Requisicao invalida (parametros ausentes ou malformados)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      descricao: Nao autenticado (token JWT ausente ou invalido)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      descricao: Nao autorizado (RBAC nega a acao para este papel/tenant)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      descricao: Recurso nao encontrado (agente nao existe no corpus)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      descricao: Conflito de negocio (agente ja contratado, etc.)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnprocessableEntity:
+      descricao: Entidade nao processavel (erro de regra de negocio)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      descricao: Limite de taxa excedido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      descricao: Erro interno do servidor
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+tags:
+  - name: hire
+    descricao: Operacoes de contratacao de agentes
+  - name: corpus
+    descricao: Consulta ao corpus de agentes da Agency
+  - name: budget
+    descricao: Politicas de orcamento vinculadas a papeis
+
+# ----------------------------------------------------------------
+# Versioning & Deprecation Policy
+#
+# Estrategia: major version no path (/v1, /v2) apenas para mudancas quebrantes.
+# Mudancas aditivas (novo campo opcional, novo endpoint, novo valor de enum)
+# sao enviadas continuamente dentro de uma versao - sem churn de v1.1.
+#
+# Ciclo de deprecation (nunca um cliff):
+#   1. Anuncio - changelog, email para desenvolvedores registrados, guia de migracao publicado
+#   2. Sinalizacao - cabecalhos Deprecation + Sunset nas respostas; log de uso
+#   3. Runway - janela humana (APIs publicas: 6-12+ meses; medir uso restante)
+#   4. Monitoramento - rastrear trafego restante por consumidor; contatar atrasados diretamente
+#   5. Sunset - remover apenas apos uso proximo de zero e a data ter passado
+#
+# Uma mudança quebrante sem caminho de migracao e sem runway e uma promessa
+# quebrada, nao uma release.
+# ----------------------------------------------------------------
