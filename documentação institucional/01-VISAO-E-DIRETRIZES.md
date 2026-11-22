@@ -1,8 +1,8 @@
 # Visão e Diretrizes Institucionais
 
-> **Versão:** 1.0  
-> **Data:** 21 de novembro de 2026  
-> **Autoridade:** Netto Farias (Founder, NettosCorp)  
+> **Versão:** 1.1  \
+> **Data:** 22 de novembro de 2026  \
+> **Status:** **Fase 1 autorizada** — Arquitetura e Modelo de Domínio \
 > **Responsável:** Hermes (Chefe de Gabinete Executivo)
 
 ---
@@ -111,3 +111,28 @@
 ---
 
 *Este documento estabelece a "constituição" da NettosCorp Enterprise. Toda decisão arquitetural deve ser rastreável a um princípio aqui definido.*
+## 6. Fase 1 — Arquitetura e Modelo de Domínio (Autorizada 22/11/2026)
+
+### Objetivo
+- Definir a arquitetura conceitual e os contratos do TokenizAi antes de implementar a fundação corporativa
+
+### Entregáveis
+1. Mapa de domínios e subdomínios da plataforma
+2. Modelo de entidades e relacionamentos
+3. Responsabilidades e limites de cada domínio
+4. Fonte única de verdade de cada entidade e informação
+5. Separação entre identidade humana, identidade de agentes, instâncias operacionais e configurações de execução
+6. Modelo de autorização, hierarquia e autoridade institucional
+7. Contratos entre frontend, backend, banco de dados e integrações
+8. Relações com Paperclip e Agency Agents, sem confundir ferramentas externas com domínios proprietários do TokenizAi
+9. Matriz de dependências entre domínios
+10. ADRs e decisões arquiteturais necessárias
+
+### Conclusão da Fase 1
+- Documentação arquitetural completa
+- Modelo de domínio consistente
+- Contratos e responsabilidades sem ambiguidades relevantes
+- Decisões arquiteturais registradas
+- Revisão de consistência entre documentos
+- Reconciliação local com origin/main
+- Evidências de validação e relatório final
