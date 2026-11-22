@@ -1,0 +1,49 @@
+{
+  "name": "@nettoscorp/plugin-sdk",
+  "version": "2.0.0",
+  "description": "NettosCorp Plugin SDK v2 — duplex channel protocol, definePlugin lifecycle hooks, host-client factory and worker RPC",
+  "license": "MIT",
+  "homepage": "https://github.com/nettoscorp/tokenizai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nettoscorp/tokenizai",
+    "directory": "packages/plugin-sdk"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./protocol": {
+      "types": "./dist/protocol.d.ts",
+      "import": "./dist/protocol.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./define-plugin": {
+      "types": "./dist/define-plugin.d.ts",
+      "import": "./dist/define-plugin.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsup --watch"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=24.11.0"
+  }
+}

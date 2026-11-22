@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+/*
+  @nettoscorp/ui-primitives — camada base dos primitivos.
+  O consumidor importa este arquivo no seu pipeline do Tailwind 4
+  (ex.: src/index.css da aplicação) para ativar os utilitários.
+  Os componentes em si só usam classes utilitárias; não há CSS-in-JS.
+*/
+
+@layer base {
+  :where(button):disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  :where([role="dialog"][aria-modal="true"]) {
+    outline: none;
+  }
+
+  :where([role="menu"]) {
+    outline: none;
+  }
+
+  /* Preferência de redução de movimento — respeita WCAG 2.1 AA (Animação a partir de Interações) */
+  @media (prefers-reduced-motion: reduce) {
+    :where(*) {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-delay: 0s !important;
+      animation-delay: 0s !important;
+    }
+  }
+}

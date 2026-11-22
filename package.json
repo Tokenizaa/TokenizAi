@@ -13,8 +13,8 @@
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "packages:build": "pnpm --filter @nettoscorp/shared --filter @nettoscorp/db --filter @nettoscorp/auth --filter @nettoscorp/kernel run build",
-    "packages:check": "pnpm --filter @nettoscorp/shared --filter @nettoscorp/db --filter @nettoscorp/auth --filter @nettoscorp/kernel run check"
+    "packages:build": "pnpm --filter @nettoscorp/shared --filter @nettoscorp/db --filter @nettoscorp/auth --filter @nettoscorp/kernel --filter @nettoscorp/design-tokens --filter @nettoscorp/plugin-sdk --filter @nettoscorp/ui-primitives run build",
+    "packages:check": "pnpm --filter @nettoscorp/shared --filter @nettoscorp/db --filter @nettoscorp/auth --filter @nettoscorp/kernel --filter @nettoscorp/design-tokens --filter @nettoscorp/plugin-sdk --filter @nettoscorp/ui-primitives run check"
   },
   "dependencies": {
     "@google/genai": "^3.6.1",
@@ -35,6 +35,9 @@
     "@nettoscorp/adapter-openclaw-gateway": "workspace:*",
     "@nettoscorp/mcp-server": "workspace:*",
     "@nettoscorp/mcp-gateway": "workspace:*",
+    "@nettoscorp/design-tokens": "workspace:*",
+    "@nettoscorp/plugin-sdk": "workspace:*",
+    "@nettoscorp/ui-primitives": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.1",
     "dotenv": "^17.2.3",

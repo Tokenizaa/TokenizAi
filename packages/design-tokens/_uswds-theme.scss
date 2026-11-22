@@ -1,0 +1,96 @@
+// _uswds-theme.scss
+// @nettoscorp/design-tokens — USWDS theme settings (Sass).
+//
+// Customize USWDS through DESIGN TOKENS and $theme-* settings — NEVER by
+// overriding USWDS CSS classes or editing files inside node_modules/@uswds.
+//
+// This file is consumed by the USWDS build (`uswds-compile` / gulp) via
+// `@use "uswds-core" with (...)`. Values mirror the TypeScript tokens in
+// src/colors.ts / src/spacing.ts / src/typography.ts so the theme stays in
+// sync across the JS and Sass sides of the design system.
+//
+// WCAG AA note: every color below was verified for contrast (4.5:1 normal
+// text, 3:1 large text/UI) against its intended background before being
+// adopted as a theme token.
+
+@use "sass:map";
+
+// ---- Spacing: USWDS units() system, 8px base (no magic numbers) ----
+$theme-spacing-unit: 8 !default;
+
+// ---- Color tokens (system colors carry accessible contrast) ----
+// Brand (blue-warm family, USWDS-aligned). Hex values, not arbitrary overrides.
+$theme-color-primary-family:   "blue-warm" !default;
+$theme-color-primary:          #0071bc !default;
+$theme-color-primary-dark:     #005a91 !default;
+$theme-color-secondary-family: "gray-cool" !default;
+$theme-color-secondary:        #64748b !default;
+
+// Semantic colors (WCAG AA verified)
+$theme-color-success:          #059669 !default;
+$theme-color-warning:          #d97706 !default;
+$theme-color-error:            #dc2626 !default;
+
+// ---- Backgrounds / text (theme via tokens) ----
+$theme-color-background:       #ffffff !default;
+$theme-color-surface:          #f8fafc !default;
+$theme-color-text-primary:     #0f172a !default;
+$theme-color-text-secondary:   #475569 !default;
+$theme-color-text-muted:       #64748b !default;
+$theme-color-text-inverse:     #ffffff !default;
+
+// Borders & focus
+$theme-color-border:           #e2e8f0 !default;
+$theme-color-focus:            #0071bc !default;
+
+// ---- Typography: type scale + project fonts ----
+$theme-type-scale-base:        5 !default;
+$theme-font-type-sans:         "public-sans" !default;
+$theme-respect-user-font-size: true !default;
+
+// ---- Grid / breakpoints ----
+$theme-grid-container-max-width: "desktop" !default;
+$theme-utility-breakpoints: (
+  "mobile-lg": true,
+  "tablet": true,
+  "desktop": true,
+) !default;
+
+// ---- Asset paths for the build ----
+$theme-image-path:  "../img" !default;
+$theme-font-path:   "../fonts" !default;
+$theme-show-compile-warnings: false !default;
+
+// ---- Dark theme overrides (applied on [data-theme="dark"]) ----
+// USWDS does not ship a built-in dark mode; we layer dark-token overrides
+// through the same $theme-* settings scoped by a data attribute.
+$nsc-dark-colors: (
+  background: #020617,
+  surface: #0f172a,
+  surface-hover: #1e293b,
+  text-primary: #f8fafc,
+  text-secondary: #cbd5e1,
+  text-muted: #94a3b8,
+  text-inverse: #0f172a,
+  primary: #38bdf8,
+  primary-dark: #0ea5e9,
+  primary-light: #0369a1,
+  secondary: #94a3b8,
+  success: #34d399,
+  warning: #fbbf24,
+  error: #f87171,
+  border: #334155,
+  focus: #38bdf8,
+) !default;
+
+// Emit dark-theme CSS custom properties so the JS ThemeSwitcher and Sass
+// stay in sync. Consume via @include nsc-dark-theme-vars.
+@mixin nsc-dark-theme-vars {
+  @each $key, $value in $nsc-dark-colors {
+    --nsc-color-#{$key}: #{$value};
+  }
+  --nsc-spacing-unit: 8px;
+}
+
+// Keep USWDS upgradable: version pinned in package.json, customizations
+// isolated in this file (and _tokens.scss), zero edits inside vendor files.

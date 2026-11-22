@@ -1,0 +1,50 @@
+{
+  "name": "@nettoscorp/ui-primitives",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NettosCorp Enterprise — base UI primitives (Button, Dialog, Dropdown) built on Radix UI and Tailwind CSS 4",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": {
+      "import": "./dist/styles.css"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup && cp src/styles.css dist/styles.css",
+    "dev": "tsup --watch",
+    "check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "tailwindcss": "^4.3.3"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.10",
+    "@radix-ui/react-dropdown-menu": "^2.1.10",
+    "@radix-ui/react-slot": "^1.1.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.3",
+    "tsup": "^8.0.0",
+    "typescript": "^7.0.2",
+    "vitest": "^2.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
