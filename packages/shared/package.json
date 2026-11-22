@@ -1,0 +1,30 @@
+{
+  "name": "@nettoscorp/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NettosCorp Enterprise — shared types, Zod schemas, constants and utilities",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "zod": "^3.23.0",
+    "tsup": "^8.0.0",
+    "vitest": "^2.0.0"
+  }
+}

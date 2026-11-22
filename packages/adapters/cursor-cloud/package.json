@@ -1,0 +1,30 @@
+{
+  "name": "@nettoscorp/adapter-cursor-cloud",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NettosCorp wrapper for @paperclipai/adapter-cursor-cloud (Fase 2 — adapters ACP)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@paperclipai/adapter-cursor-cloud": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "tsup": "^8.0.0",
+    "vitest": "^2.0.0",
+    "@types/node": "^22.14.0"
+  },
+  "engines": { "node": ">=22.0.0" }
+}

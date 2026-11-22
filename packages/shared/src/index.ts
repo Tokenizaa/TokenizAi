@@ -1,0 +1,131 @@
+/**
+ * @nettoscorp/shared — Shared types, Zod schemas, constants and utilities for NettosCorp Enterprise
+ *
+ * Barrel entry point. Individual modules (types, schemas, constants, utils) export their own members.
+ * Consumers should import directly from '@nettoscorp/shared/types', '@nettoscorp/shared/schemas', etc.
+ * or use the named exports from the package's main entry.
+ */
+
+// Package version and metadata
+export const VERSION = '0.1.0';
+export const DESCRIPTION = 'NettosCorp Enterprise — shared types, Zod schemas, constants and utilities';
+
+// Re-export all types and base Zod schemas from types.ts
+export * from './types';
+
+// Re-export composite schemas from schemas.ts (not the base schemas re-exported from types)
+export {
+  RoleDefinitionSchema,
+  type RoleDefinition,
+  ModuleSchema,
+  type Module,
+  AgentBlueprintSchema,
+  type AgentBlueprint,
+  PersonRecordSchema,
+  type PersonRecord,
+  OrgPositionSchema,
+  type OrgPosition,
+  DepartmentRecordSchema,
+  type DepartmentRecord,
+  OperationalAgentInstanceSchema,
+  type OperationalAgentInstance,
+  FinancialEntrySchema,
+  type FinancialEntry,
+  CostCenterBudgetSchema,
+  type CostCenterBudget,
+  ProjectTaskSchema,
+  type ProjectTask,
+  EnterpriseProjectSchema,
+  type EnterpriseProject,
+  GovernanceRecordSchema,
+  type GovernanceRecord,
+  SyncQueueItemSchema,
+  type SyncQueueItem,
+  TeamCompositionRecordSchema,
+  type TeamCompositionRecord,
+  TechIncidentSchema,
+  type TechIncident,
+  WeeklyProgressPointSchema,
+  type WeeklyProgressPoint,
+  ChatConversationSchema,
+  type ChatConversation,
+  ChatMessageSchema,
+  type ChatMessage,
+  ChatParticipantSchema,
+  type ChatParticipant,
+  ChatContextRefSchema,
+  type ChatContextRef,
+  AppNotificationSchema,
+  type AppNotification,
+  CalendarCommitmentSchema,
+  type CalendarCommitment,
+  CommercialOpportunitySchema,
+  type CommercialOpportunity,
+  MarketingCampaignSchema,
+  type MarketingCampaign,
+  ProductServiceItemSchema,
+  type ProductServiceItem,
+  CompanyAccountSchema,
+  type CompanyAccount,
+  ContractItemSchema,
+  type ContractItem,
+  AISolutionSchema,
+  type AISolution,
+  NexusPhaseGateSchema,
+  type NexusPhaseGate,
+  SoftwareRepoSchema,
+  type SoftwareRepo,
+  IntegrationConfigSchema,
+  type IntegrationConfig,
+  schemaMap,
+} from './schemas';
+
+// Re-export constants
+export * from './constants';
+
+// Re-export utilities (excluding formatBRL, formatDateBR, formatDateTimeBR which are in constants)
+export {
+  generateUUID,
+  generateShortId,
+  calculatePercentage,
+  calculateBudgetUtilization,
+  formatNumberBR,
+  formatCompactNumber,
+  deepClone,
+  isEmpty,
+  safeGet,
+  debounce,
+  throttle,
+  makeAuditHash,
+  slugify,
+  truncate,
+  capitalize,
+  parseBRL,
+  daysBetween,
+  isOverdue,
+  calculateProjectProgress,
+  calculateProjectSpent,
+  calculateTotalRevenue,
+  calculateTotalExpenses,
+  calculateNetCashFlow,
+  getCostCenterSpending,
+  filterTasksByStatus,
+  getAssignedTasks,
+  getOverdueTasks,
+  getBlockedTasks,
+  sortTasksByPriority,
+  generateGovernanceCode,
+  isValidEmail,
+  isValidBRLAmount,
+  normalizeString,
+  containsAny,
+  pickRandom,
+  shuffleArray,
+  chunkArray,
+  uniqueBy,
+  groupBy,
+  sleep,
+  retry,
+  formatRelativeTime,
+  maskSensitive,
+} from './utils';

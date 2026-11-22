@@ -1,0 +1,28 @@
+{
+  "name": "@nettoscorp/kernel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NettosCorp Enterprise — module system runtime: module loader, DI container, event bus (Fase 5)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "pnpm exec tsup",
+    "dev": "tsup --watch",
+    "check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {},
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "tsup": "^8.0.0",
+    "vitest": "^2.0.0",
+    "@types/node": "^22.14.0"
+  }
+}

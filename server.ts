@@ -91,8 +91,10 @@ function persistDatabase(): void {
 }
 
 function getCallerRole(req: express.Request): UserRole {
-  const raw = String(req.headers['x-nettoscorp-role'] || 'direcao_executiva');
-  return raw in ROLE_DEFINITIONS ? (raw as UserRole) : 'operacional';
+  // A-01: A autenticação backend ainda não está implementada.
+  // Não confiamos em cabeçalhos controlados pelo cliente (x-nettoscorp-role).
+  // Padrão: mínimo privilégio (operacional) até que auth real seja implementada.
+  return 'operacional';
 }
 
 function makeAuditHash(seed: string): string {
@@ -298,7 +300,9 @@ async function startServer() {
       timestamp: new Date().toISOString(),
       integrations: {
         gemini: geminiConfigured,
-        supabase: Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY),
+        // A-05: supabase não tem client real conectado no backend.
+        // Reportado apenas como não configurado até haver conexão ativa verificada.
+        supabase: false,
         paperclip: Boolean(process.env.PAPERCLIP_ENDPOINT),
         githubToken: Boolean(process.env.GITHUB_TOKEN),
       },
@@ -2026,17 +2030,10 @@ Comando do usuário: "${transcript.trim()}"`,
       operations_lead:
         'Você é o Líder de Operações & Entregas da NettosCorp. Ajude a destravar tarefas atrasadas, organizar gates NEXUS, distribuir carga entre humanos e agentes Paperclip e definir critérios objetivos de conclusão.',
       custom:
-        customSystemInstruction?.trim() ||
         'Você é um assistente corporativo versátil da NettosCorp Enterprise. Responda em Português (Brasil) de forma clara, estruturada e acionável.',
     };
 
-    const baseRoleInstruction =
-      (customSystemInstruction?.trim() && personaId === 'custom'
-        ? customSystemInstruction.trim()
-        : rolePrompts[personaId] ?? rolePrompts.executive_advisor) +
-      (customSystemInstruction?.trim() && personaId !== 'custom'
-        ? `\n\nDiretriz adicional do usuário:\n${customSystemInstruction.trim()}`
-        : '');
+    const baseRoleInstruction = rolePrompts[personaId] ?? rolePrompts.executive_advisor;
 
     const totalRevenue = db.financialEntries
       .filter((f) => f.type === 'receita')

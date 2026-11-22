@@ -1,0 +1,37 @@
+{
+  "name": "@nettoscorp/auth",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NettosCorp Enterprise — Better Auth config base, RBAC helpers, clearance and authority types",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "zod": "^3.23.0",
+    "better-auth": "^1.0.0",
+    "drizzle-orm": "^0.38.0",
+    "@nettoscorp/shared": "workspace:*",
+    "@nettoscorp/db": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "zod": "^3.23.0",
+    "better-auth": "^1.0.0",
+    "drizzle-orm": "^0.38.0",
+    "tsup": "^8.0.0",
+    "vitest": "^2.0.0",
+    "@types/node": "^22.14.0"
+  }
+}
