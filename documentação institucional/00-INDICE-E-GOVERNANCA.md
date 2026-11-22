@@ -2,7 +2,7 @@
 
 > **Repositório:** Tokenizaa/TokenizAi (main)  
 > **Diretório:** `documentação institucional/`  
-> **Versão:** 2.0  
+> **Versão:** 2.1  
 > **Data:** 21 de novembro de 2026  
 > **Responsável:** Hermes (Chefe de Gabinete Executivo)  
 > **Autoridade:** Netto Farias (Founder, NettosCorp)
@@ -21,11 +21,11 @@ Este diretório é a **única fonte canônica** de documentação arquitetural e
 
 ---
 
-## 2. Estrutura dos 13 Documentos
+## 2. Estrutura dos 14 Documentos
 
 | # | Arquivo | Finalidade | Status | Versão |
 |---|---------|------------|--------|--------|
-| 00 | `00-INDICE-E-GOVERNANCA.md` | Este arquivo: índice, regras documentais, governança | ✅ Canônico | 2.0 |
+| 00 | `00-INDICE-E-GOVERNANCA.md` | Este arquivo: índice, regras documentais, governança | ✅ Canônico | 2.1 |
 | 01 | `01-VISAO-E-DIRETRIZES.md` | Visão institucional, princípios, diretrizes de produto | ✅ Canônico | 1.0 |
 | 02 | `02-ENGENHARIA-REVERSA-TOKENIZAI.md` | **Auditoria completa com evidências reais** do TokenizAi | ✅ Canônico | **2.0** |
 | 03 | `03-ENGENHARIA-REVERSA-AGENCY-AGENTS.md` | Catálogo, identidades, NEXUS, integração Hermes | ✅ Canônico | 1.0 |
@@ -37,7 +37,8 @@ Este diretório é a **única fonte canônica** de documentação arquitetural e
 | 09 | `09-SEGURANCA-E-GOVERNANCA.md` | Identidade, autoridade, permissões, RBAC, auditoria | ✅ Canônico | 1.0 |
 | 10 | `10-ROADMAP-DE-INTEGRACAO.md` | Fases de desenvolvimento, migração, homologação | ✅ Canônico | 1.0 |
 | 11 | `11-MATRIZ-DE-ADERENCIA.md` | **Matriz atualizada com evidências reais** do que existe vs. falta | ✅ Canônico | **2.0** |
-| 12 | `12-EVIDENCIAS-E-PENDENCIAS.md` | **NOVO** — Evidências consolidadas, pendências P0/P1/P2, decisões pendentes | ✅ Canônico | **2.0 (NOVO)** |
+| 12 | `12-EVIDENCIAS-E-PENDENCIAS.md` | Evidências consolidadas, pendências P0/P1/P2 e decisões pendentes | ✅ Canônico | **2.1** |
+| 13 | `13-BASELINE-REAL-SUPABASE-E-SEGURANCA.md` | Baseline real do Supabase, hardening RLS, memberships e bloqueios de segurança | ✅ Canônico | **1.0** |
 
 ---
 
@@ -105,8 +106,9 @@ Toda afirmação técnica deve citar a origem:
 
 | Projeto | Checkout Local | Remote | Branch | Commit Analisado |
 |---------|---------------|--------|--------|------------------|
-| **TokenizAi** | `/home/lg/workspace/NettosCorp/TokenizAi` | Tokenizaa/TokenizAi | main | `68e161b` |
-| **Agency Agents (fork)** | `/home/lg/workspace/NettosCorp/NettosCorp/enterprise/agency-agents` | Tokenizaa/agency-agents-app | main | `6d9a355` (v0.3.2) |
+| **TokenizAi** | `/home/lg/workspace/NettosCorp/TokenizAi` | Tokenizaa/TokenizAi | main | `d12f3db` |
+| **Agency Agents (corpus)** | `/home/lg/workspace/NettosCorp/NettosCorp/enterprise/agency-agents` | Tokenizaa/agency-agents | main | `4df4038` |
+| **Agency Agents (desktop app)** | `NÃO VERIFICADO` | Tokenizaa/agency-agents-app | main | `5757c80` (v0.3.2) |
 | **Agency Agents (upstream)** | N/A | msitarzewski/agency-agents | main | `8ae6164` |
 | **Paperclip** | `/home/lg/workspace/NettosCorp/NettosCorp/paperclip` | NettosCorp/paperclip | main | `cb64a236b` (v0.3.1) |
 
@@ -117,7 +119,9 @@ Toda afirmação técnica deve citar a origem:
 | Versão | Data | Autor | Mudança |
 |--------|------|-------|---------|
 | 1.0 | 21/11/2026 | Hermes | Criação inicial — consolidação canônica dos 13 documentos |
-| 2.0 | 21/11/2026 | Hermes | **Atualização com evidências reais**: TokenizAi auditado (v2.0), Matriz atualizada (v2.0), Documento 12 criado (Evidências e Pendências) |
+| 2.0 | 21/11/2026 | Hermes | Atualização com evidências reais: TokenizAi auditado, Matriz e Documento 12 consolidados |
+| 2.1 | 21/11/2026 | ChatGPT / Conselheiro | Correção da contagem do índice, separação do corpus e desktop app, baseline atual da Fase 0 e status de CI |
+| 2.1 | 22/11/2026 | ChatGPT / Conselheiro | Reconciliação independente da Fase 0: separação entre repositório do corpus e desktop app, correção do índice (documento 13), referências do orquestrador e estado real do CI |
 
 ---
 
@@ -125,28 +129,23 @@ Toda afirmação técnica deve citar a origem:
 
 | Repositório | Commit | Status Auditoria | Evidências Principais |
 |-------------|--------|------------------|----------------------|
-| **TokenizAi** | `2988750` | ✅ **COMPLETA v2.0** | React 19 + Express, 17 módulos, RBAC frontend, 100% mock data, **sem DB/auth real** |
-| **Agency Agents (fork)** | `da407fe` | ✅ **COMPLETA v1.0** | 282 agentes, 21 divisões, Tauri app, **Hermes plugin quebrado**, NEXUS ausente |
+| **TokenizAi** | `fd5946d` | ✅ **BASELINE v2.0** | React 19 + Express, 17 módulos, RBAC frontend; persistência/auth reais ainda pendentes |
+| **Agency Agents (corpus)** | `4df4038` | 🟡 **FASE 0 — VALIDAÇÃO PENDENTE** | 282 agentes, 18 divisões, builder Hermes, scripts de validação, NEXUS e testes automatizados presentes |
+| **Agency Agents (desktop app)** | `5757c80` | 🟡 **FASE 0 — CI PENDENTE** | Svelte 5 + Tauri/Rust; PR Check inclui cargo fmt/test, npm check e npm build |
 | **Agency Agents (upstream)** | `8ae6164` | 🔴 **NÃO AUDITADO LOCAL** | Fonte canônica: catálogo, scripts, NEXUS strategy |
 | **Paperclip** | `cb64a236b` | ✅ **COMPLETA v1.0** | 27 packages, 480 tabelas, 12 adapters, Plugin SDK v1.0, MCP, CI/CD verde |
 
 ---
 
-## 8. Gaps Críticos Identificados (P0 — Bloqueiam Início)
+## 8. Gaps Críticos Identificados (P0 — Estado Atual)
 
 | # | Gap | Repositório | Evidência | Fase Roadmap |
 |---|-----|-------------|-----------|--------------|
-| 1 | **Nenhum banco de dados / ORM** | TokenizAi | `grep -r "drizzle\|prisma" src/` → vazio | Fase 1 |
-| 2 | **Nenhuma autenticação backend** | TokenizAi | `server.ts` — sem auth middleware | Fase 1 |
-| 3 | **Nenhuma persistência real** | TokenizAi | `localStorage` + `/tmp` apenas | Fase 1 |
-| 4 | **Nenhum auth providers** | TokenizAi | `server.ts` — sem auth middleware | Fase 1 |
-| 5 | **Paperclip não configurado** | TokenizAi | `enterpriseSeed.ts:771-778` | Fase 0 |
-| 5 | **Supabase não configurado** | TokenizAi | `enterpriseSeed.ts:751-760` | Fase 0 |
-| 6 | **Hermes Plugin quebrado** | Agency Agents | `build-hermes-plugin.py` **AUSENTE** | Fase 0 |
-| 7 | **Scripts validação AA ausentes** | Agency Agents | `lib.sh`, `install.sh`, etc. **AUSENTES** | Fase 0 |
-| 8 | **NEXUS Strategy ausente no fork** | Agency Agents | `strategy/` **AUSENTE** no fork | Fase 0 |
-| 8 | **Antigravity non-deterministic** | Agency Agents | `docs/PLAN.md:88` | Fase 0 |
-| 9 | **EvidenceQA name mismatch** | Agency Agents | `agents-orchestrator.md:89` vs `testing-evidence-collector.md` | Fase 0 |
+| 1 | Nenhum banco de dados / ORM no TokenizAi | TokenizAi | Baseline documentada em 13; persistência real ainda ausente | Fase 1 |
+| 2 | Nenhuma autenticação backend no TokenizAi | TokenizAi | Baseline documentada em 13; papel por header ainda precisa ser removido | Fase 1 |
+| 3 | Nenhuma persistência real no TokenizAi | TokenizAi | Backend ainda usa arquivos temporários e cache local | Fase 1 |
+| 4 | CI da Fase 0 sem homologação verde | Agency Agents + desktop app | Execuções em 22/11/2026 falharam antes de iniciar steps; logs indisponíveis | Fase 0 |
+| 5 | Provisionamento Hermes end-to-end | Agency Agents + Hermes runtime | Builder e testes estão no repositório; instalação real no Hermes ainda não foi comprovada | Fase 0 |
 
 ---
 

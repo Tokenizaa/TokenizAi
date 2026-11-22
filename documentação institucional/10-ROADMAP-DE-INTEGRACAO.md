@@ -1,10 +1,10 @@
 # Roadmap de Integração
 
-> **Versão:** 1.0  
+> **Versão:** 1.1  
 > **Data:** 21 de novembro de 2026  
-> **Status:** **PROPOSTA** — Aguarda aprovação do Founder  
+> **Status:** **EXECUÇÃO AUTORIZADA — Fase 0 em validação; avanço bloqueado até CI verde**  
 > **Base:** Arquitetura Alvo (05) + Modelo de Domínio (06) + Segurança (09)  
-> **Responsável:** Hermes
+> **Responsável pela execução atual:** Platform / Conselheiro
 
 ---
 
@@ -12,7 +12,7 @@
 
 | Fase | Nome | Duração | Objetivo Principal | Entregável Chave |
 |------|------|---------|-------------------|------------------|
-| **0** | **Bootstrap & Fixes Críticos** | 1 sem | Recuperar upstream, fixar Hermes, CI básico | Hermes plugin funcional, CI verde |
+| **0** | **Bootstrap & Fixes Críticos** | 1 sem | Recuperar upstream, fixar Hermes, CI básico | Hermes plugin funcional, CI verde — **em validação** |
 | **1** | **Foundation Packages** | 2-3 sem | Extrair `@nettoscorp/shared`, `@nettoscorp/db`, `@nettoscorp/auth` | 3 packages publicados no npm privado |
 | **2** | **Adapters & MCP** | 1-2 sem | Publicar 12 adapters ACP + MCP server/gateway | 14 packages publicados |
 | **3** | **Plugin SDK v2** | 1 sem | `@nettoscorp/plugin-sdk` independente + sandbox providers | Package + docs + examples |
@@ -36,12 +36,22 @@
 
 | Task | Responsável | Critério de Aceite |
 |------|-------------|-------------------|
-| Recuperar `build-hermes-plugin.py` do upstream `msitarzewski/agency-agents` | Hermes | Script funcional, gera plugin Hermes |
-| Recuperar `scripts/lib.sh`, `install.sh`, `lint-agents.sh`, `check-divisions.sh`, `check-tools.sh` | Hermes | Scripts executam sem erro |
-| Recuperar pasta `strategy/` (NEXUS) do upstream | Hermes | 7 arquivos NEXUS no checkout |
+| Confirmar e validar `scripts/build-hermes-plugin.py` no fork, usando upstream `8ae6164` como referência | Platform | Script gera plugin e passa contract/behavior tests |
+| Confirmar presença e executar `scripts/lib.sh`, `install.sh`, `lint-agents.sh`, `check-divisions.sh`, `check-tools.sh` | Platform | Scripts executam sem erro |
+| Confirmar sincronização da pasta `strategy/` (NEXUS) com o upstream | Platform | Sete playbooks de fase, estratégia e runbooks presentes e consistentes |
 | Configurar GitHub Actions básico: `cargo fmt`, `cargo test`, `npm run check`, `npm run build` | Platform | CI verde no fork Tokenizaa |
-| Patch Antigravity `date_added` → determinístico | Hermes | Parity test passa para antigravity |
-| Fix `EvidenceQA` → `testing-evidence-collector` no orchestrator | Hermes | Agente referência correto |
+| Confirmar que Antigravity não emite `date_added` e adicionar teste de determinismo | Platform | Parity/determinismo passa em CI |
+| Fix `EvidenceQA` → `testing-evidence-collector` no orchestrator | Platform | Agente referência corrigido no commit `4df4038` |
+
+**Estado de execução (21/11/2026):**
+
+- [x] Builder Hermes e scripts de validação já presentes no fork `Tokenizaa/agency-agents`; nenhum recopy desnecessário do upstream.
+- [x] Pasta `strategy/` presente: estratégia NEXUS, sete playbooks de fase e runbooks de cenário.
+- [x] Conversor Antigravity atual não gera `date_added`; teste de determinismo criado e conectado ao workflow.
+- [x] Quatro referências antigas `EvidenceQA` substituídas pelo slug real `testing-evidence-collector`.
+- [x] CI da aplicação ampliado para executar `npm run build`, além de `cargo fmt`, `cargo test` e `npm run check`.
+- [x] CI do corpus ampliado para gerar e testar o plugin Hermes e verificar determinismo Antigravity.
+- [ ] **Bloqueio de homologação:** execuções do GitHub Actions em ambos os repositórios terminaram em falha antes de qualquer step (lista de steps vazia/nula); logs não foram disponibilizados. A causa ainda não foi determinada. A Fase 0 permanece aberta até que os workflows executem e fiquem verdes.
 
 ### Fase 1: Foundation Packages (2-3 semanas)
 
@@ -228,4 +238,4 @@
 
 ---
 
-*Roadmap proposto. Requer aprovação do Founder (Netto Farias) para iniciar. Cada fase tem revisão técnica obrigatória antes de prosseguir.*
+*Execução da Fase 0 autorizada pelo Founder (Netto Farias). O roadmap será executado uma fase completa por rodada; nenhuma fase seguinte começa antes da homologação integral da fase atual.*
