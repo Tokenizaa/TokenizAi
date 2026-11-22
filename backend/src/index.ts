@@ -10,7 +10,7 @@
  */
 
 import 'dotenv/config';
-import express, { type Request, type Response } from 'express';
+import express, { type Request, type Response, type NextFunction } from 'express';
 import {
   authenticate,
   login,
@@ -138,6 +138,18 @@ app.get(
     }
   }
 );
+
+/* -------------------------------------------------------------------------- */
+/* Middleware global de tratamento de erros                                   */
+/* -------------------------------------------------------------------------- */
+
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[backend] Erro não tratado:', err);
+  res.status(500).json({
+    code: 'internal_error',
+    message: err instanceof Error ? err.message : 'Erro interno do servidor',
+  });
+});
 
 /* -------------------------------------------------------------------------- */
 /* 404                                                                        */

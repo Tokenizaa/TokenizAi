@@ -230,53 +230,60 @@ export async function login(req: Request, res: Response): Promise<void> {
 
   const { email, password } = parsed;
 
-  const result = (await supabaseRequest(
-    'auth/token?grant_type=password',
-    {
-      method: 'POST',
-      body: { email, password },
+  try {
+    const result = (await supabaseRequest(
+      'auth/token?grant_type=password',
+      {
+        method: 'POST',
+        body: { email, password },
+      }
+    )) as { data?: unknown; error?: { message?: string } };
+
+    if (result.error || !result.data) {
+      res.status(401).json({
+        code: 'invalid_credentials',
+        message: 'E-mail ou senha inválidos',
+      });
+      return;
     }
-  )) as { data?: unknown; error?: { message?: string } };
 
-  if (result.error || !result.data) {
-    res.status(401).json({
-      code: 'invalid_credentials',
-      message: 'E-mail ou senha inválidos',
+    const user = result.data as { id: string; email: string; user_metadata?: Record<string, unknown> };
+    const userMetadata = user.user_metadata ?? {};
+
+    const claims: Omit<JWTClaims, 'iat' | 'exp' | 'iss' | 'aud'> = {
+      sub: user.id,
+      email: user.email ?? email,
+      role: (userMetadata.role as string) ?? 'operacional',
+      authorityLevel: (userMetadata.authority_level as string) ?? 'operacional',
+      clearanceLevel: (userMetadata.clearance_level as string) ?? 'publico',
+      companyId: (userMetadata.company_id as string) ?? undefined,
+      modules: Array.isArray(userMetadata.modules)
+        ? (userMetadata.modules as string[])
+        : ['executive', 'chat'],
+    };
+
+    const token = signToken(claims);
+
+    res.json({
+      code: 'ok',
+      message: 'Autenticado com sucesso',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: claims.role,
+        authorityLevel: claims.authorityLevel,
+        clearanceLevel: claims.clearanceLevel,
+        companyId: claims.companyId,
+        modules: claims.modules,
+      },
     });
-    return;
+  } catch (err) {
+    res.status(502).json({
+      code: 'supabase_unavailable',
+      message: err instanceof Error ? err.message : 'Serviço de autenticação indisponível',
+    });
   }
-
-  const user = result.data as { id: string; email: string; user_metadata?: Record<string, unknown> };
-  const userMetadata = user.user_metadata ?? {};
-
-  const claims: Omit<JWTClaims, 'iat' | 'exp' | 'iss' | 'aud'> = {
-    sub: user.id,
-    email: user.email ?? email,
-    role: (userMetadata.role as string) ?? 'operacional',
-    authorityLevel: (userMetadata.authority_level as string) ?? 'operacional',
-    clearanceLevel: (userMetadata.clearance_level as string) ?? 'publico',
-    companyId: (userMetadata.company_id as string) ?? undefined,
-    modules: Array.isArray(userMetadata.modules)
-      ? (userMetadata.modules as string[])
-      : ['executive', 'chat'],
-  };
-
-  const token = signToken(claims);
-
-  res.json({
-    code: 'ok',
-    message: 'Autenticado com sucesso',
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      role: claims.role,
-      authorityLevel: claims.authorityLevel,
-      clearanceLevel: claims.clearanceLevel,
-      companyId: claims.companyId,
-      modules: claims.modules,
-    },
-  });
 }
 
 /**
@@ -294,33 +301,34 @@ export async function register(req: Request, res: Response): Promise<void> {
 
   const { email, password, name, companyId } = parsed;
 
-  const result = (await supabaseRequest('auth/signup', {
-    method: 'POST',
-    body: {
-      email,
-      password,
-      options: {
-        data: {
-          name,
-          role: 'operacional',
-          authority_level: 'operacional',
-          clearance_level: 'publico',
-          company_id: companyId,
-          modules: ['executive', 'chat'],
+  try {
+    const result = (await supabaseRequest('auth/signup', {
+      method: 'POST',
+      body: {
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            role: 'operacional',
+            authority_level: 'operacional',
+            clearance_level: 'publico',
+            company_id: companyId,
+            modules: ['executive', 'chat'],
+          },
         },
       },
-    },
-  })) as { data?: unknown; error?: { message?: string } };
+    })) as { data?: unknown; error?: { message?: string } };
 
-  if (result.error || !result.data) {
-    res.status(400).json({
-      code: 'registration_failed',
-      message: (result.error as { message?: string })?.message ?? 'Falha ao registrar usuário',
-    });
-    return;
-  }
+    if (result.error || !result.data) {
+      res.status(400).json({
+        code: 'registration_failed',
+        message: (result.error as { message?: string })?.message ?? 'Falha ao registrar usuário',
+      });
+      return;
+    }
 
-  const user = result.data as { id: string; email: string };
+    const user = result.data as { id: string; email: string };
 
     const claims: Omit<JWTClaims, 'iat' | 'exp' | 'iss' | 'aud'> = {
       sub: user.id,
@@ -348,6 +356,12 @@ export async function register(req: Request, res: Response): Promise<void> {
         modules: claims.modules,
       },
     });
+  } catch (err) {
+    res.status(502).json({
+      code: 'supabase_unavailable',
+      message: err instanceof Error ? err.message : 'Serviço de autenticação indisponível',
+    });
+  }
 }
 
 /**
