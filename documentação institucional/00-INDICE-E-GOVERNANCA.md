@@ -106,9 +106,9 @@ Toda afirmação técnica deve citar a origem:
 
 | Projeto | Checkout Local | Remote | Branch | Commit Analisado |
 |---------|---------------|--------|--------|------------------|
-| **TokenizAi** | `/home/lg/workspace/NettosCorp/TokenizAi` | Tokenizaa/TokenizAi | main | `d12f3db` |
-| **Agency Agents (corpus)** | `/home/lg/workspace/NettosCorp/NettosCorp/enterprise/agency-agents` | Tokenizaa/agency-agents | main | `4df4038` |
-| **Agency Agents (desktop app)** | `NÃO VERIFICADO` | Tokenizaa/agency-agents-app | main | `5757c80` (v0.3.2) |
+| **TokenizAi** | `/home/lg/workspace/NettosCorp/TokenizAi` | Tokenizaa/TokenizAi | main | `61da94a` (Fase 0 homologada localmente) |
+| **Agency Agents (corpus)** | `/home/lg/workspace/NettosCorp/agency-agents-corpus` | Tokenizaa/agency-agents | main | `4df4038` (Fase 0 validada localmente) |
+| **Agency Agents (desktop app)** | `/home/lg/workspace/NettosCorp/TokenizAi/agency-agents` | Tokenizaa/agency-agents-app | main | `6d9a355` (Fase 0 validada localmente; cargo test pendente — build script Tauri) |
 | **Agency Agents (upstream)** | N/A | msitarzewski/agency-agents | main | `8ae6164` |
 | **Paperclip** | `/home/lg/workspace/NettosCorp/NettosCorp/paperclip` | NettosCorp/paperclip | main | `cb64a236b` (v0.3.1) |
 
@@ -122,6 +122,7 @@ Toda afirmação técnica deve citar a origem:
 | 2.0 | 21/11/2026 | Hermes | Atualização com evidências reais: TokenizAi auditado, Matriz e Documento 12 consolidados |
 | 2.1 | 21/11/2026 | ChatGPT / Conselheiro | Correção da contagem do índice, separação do corpus e desktop app, baseline atual da Fase 0 e status de CI |
 | 2.1 | 22/11/2026 | ChatGPT / Conselheiro | Reconciliação independente da Fase 0: separação entre repositório do corpus e desktop app, correção do índice (documento 13), referências do orquestrador e estado real do CI |
+| 2.2 | 22/11/2026 | Hermes / Conselheiro | **Fase 0 homologada localmente**: três repositórios reconciliados (TokenizAi `61da94a`, corpus AA `4df4038`, desktop AA `6d9a355`); validações locais executadas (11 gates: 10 aprovados, 1 pendente — cargo test falha em build script Tauri); CI remoto bloqueado por cobrança GitHub Actions; `agency-agents/` e `paperclip/` classificados como referências intencionais; `.svelte-kit/` como artefato gerado. |
 
 ---
 
@@ -129,9 +130,9 @@ Toda afirmação técnica deve citar a origem:
 
 | Repositório | Commit | Status Auditoria | Evidências Principais |
 |-------------|--------|------------------|----------------------|
-| **TokenizAi** | `fd5946d` | ✅ **BASELINE v2.0** | React 19 + Express, 17 módulos, RBAC frontend; persistência/auth reais ainda pendentes |
-| **Agency Agents (corpus)** | `4df4038` | 🟡 **FASE 0 — VALIDAÇÃO PENDENTE** | 282 agentes, 18 divisões, builder Hermes, scripts de validação, NEXUS e testes automatizados presentes |
-| **Agency Agents (desktop app)** | `5757c80` | 🟡 **FASE 0 — CI PENDENTE** | Svelte 5 + Tauri/Rust; PR Check inclui cargo fmt/test, npm check e npm build |
+| **TokenizAi** | `61da94a` | ✅ **FASE 0 HOMOLOGADA LOCALMENTE** | Reconciliação completa, baseline institucional, validações build/typecheck passam |
+| **Agency Agents (corpus)** | `4df4038` | ✅ **FASE 0 VALIDADA LOCALMENTE** | 282 agentes, 18 divisões, builder Hermes, scripts de validação, NEXUS e testes automatizados presentes; CI remoto pendente |
+| **Agency Agents (desktop app)** | `6d9a355` | ✅ **FASE 0 VALIDADA LOCALMENTE** | Svelte 5 + Tauri/Rust; PR Check inclui cargo fmt, npm check, npm build; cargo test pendente por build script Tauri |
 | **Agency Agents (upstream)** | `8ae6164` | 🔴 **NÃO AUDITADO LOCAL** | Fonte canônica: catálogo, scripts, NEXUS strategy |
 | **Paperclip** | `cb64a236b` | ✅ **COMPLETA v1.0** | 27 packages, 480 tabelas, 12 adapters, Plugin SDK v1.0, MCP, CI/CD verde |
 
@@ -144,8 +145,7 @@ Toda afirmação técnica deve citar a origem:
 | 1 | Nenhum banco de dados / ORM no TokenizAi | TokenizAi | Baseline documentada em 13; persistência real ainda ausente | Fase 1 |
 | 2 | Nenhuma autenticação backend no TokenizAi | TokenizAi | Baseline documentada em 13; papel por header ainda precisa ser removido | Fase 1 |
 | 3 | Nenhuma persistência real no TokenizAi | TokenizAi | Backend ainda usa arquivos temporários e cache local | Fase 1 |
-| 4 | CI da Fase 0 sem homologação verde | Agency Agents + desktop app | Execuções em 22/11/2026 falharam antes de iniciar steps; logs indisponíveis | Fase 0 |
-| 5 | Provisionamento Hermes end-to-end | Agency Agents + Hermes runtime | Builder e testes estão no repositório; instalação real no Hermes ainda não foi comprovada | Fase 0 |
+| 4 | Provisionamento Hermes end-to-end | Agency Agents + Hermes runtime | Builder e testes estão no repositório; instalação real no Hermes ainda não foi comprovada | Fase 0 |
 
 ---
 

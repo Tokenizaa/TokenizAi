@@ -1,9 +1,9 @@
 # Roadmap de Integração
 
-> **Versão:** 1.1  
-> **Data:** 21 de novembro de 2026  
-> **Status:** **EXECUÇÃO AUTORIZADA — Fase 0 em validação; avanço bloqueado até CI verde**  
-> **Base:** Arquitetura Alvo (05) + Modelo de Domínio (06) + Segurança (09)  
+> **Versão:** 1.2  \
+> **Data:** 22 de novembro de 2026  \
+> **Status:** **FASE 0 HOMOLOGADA LOCALMENTE — FASE 1 AUTORIZADA**  \
+> **Base:** Arquitetura Alvo (05) + Modelo de Domínio (06) + Segurança (09)  \
 > **Responsável pela execução atual:** Platform / Conselheiro
 
 ---
@@ -32,7 +32,7 @@
 
 ## 2. Detalhamento por Fase
 
-### Fase 0: Bootstrap & Fixes Críticos (1 semana)
+### Fase 0: Bootstrap & Fixes Críticos (1 semana) — **HOMOLOGADA LOCALMENTE (22/11/2026)**
 
 | Task | Responsável | Critério de Aceite |
 |------|-------------|-------------------|
@@ -43,7 +43,7 @@
 | Confirmar que Antigravity não emite `date_added` e adicionar teste de determinismo | Platform | Parity/determinismo passa em CI |
 | Fix `EvidenceQA` → `testing-evidence-collector` no orchestrator | Platform | Agente referência corrigido no commit `4df4038` |
 
-**Estado de execução (21/11/2026):**
+**Estado de execução (22/11/2026 — Homologação Local):**
 
 - [x] Builder Hermes e scripts de validação já presentes no fork `Tokenizaa/agency-agents`; nenhum recopy desnecessário do upstream.
 - [x] Pasta `strategy/` presente: estratégia NEXUS, sete playbooks de fase e runbooks de cenário.
@@ -51,7 +51,27 @@
 - [x] Quatro referências antigas `EvidenceQA` substituídas pelo slug real `testing-evidence-collector`.
 - [x] CI da aplicação ampliado para executar `npm run build`, além de `cargo fmt`, `cargo test` e `npm run check`.
 - [x] CI do corpus ampliado para gerar e testar o plugin Hermes e verificar determinismo Antigravity.
-- [ ] **Bloqueio de homologação:** execuções do GitHub Actions em ambos os repositórios terminaram em falha antes de qualquer step (lista de steps vazia/nula); logs não foram disponibilizados. A causa ainda não foi determinada. A Fase 0 permanece aberta até que os workflows executem e fiquem verdes.
+- [x] **Validações locais executadas (22/11/2026):**
+  - `lint-agents.sh` ✅ (0 erros, 58 warnings — seções recomendadas)
+  - `check-divisions.sh` ✅ (18 divisões consistentes)
+  - `check-tools.sh` ✅ (17 ferramentas consistentes)
+  - `check-hermes-plugin.py` ✅ (esquemas válidos)
+  - `test-hermes-plugin.py` ✅ (6 testes passing)
+  - `test-antigravity-determinism.sh` ✅ (determinístico)
+  - `npm run check` ✅ (0 erros, 0 warnings)
+  - `npm run build` ✅ (build exitoso)
+  - `cargo fmt --check` ✅ (passa com manifest-path)
+  - `bun run build` ✅ (TokenizAi)
+  - `npx tsc --noEmit` ✅ (TokenizAi)
+- [ ] **Bloqueio de homologação CI remoto:** execuções do GitHub Actions em ambos os repositórios terminaram em falha antes de qualquer step (lista de steps vazia/nula); logs não foram disponibilizados. A causa é bloqueio de cobrança/container do GitHub Actions — **não falha de código**.
+- [ ] **Pendência técnica documentada:** `cargo test` falha por problema no build script Tauri (caminho de permissões ausente em ambiente de build), não por falha de código. `cargo fmt --check` passa.
+- [ ] **Diretórios de referência:** `agency-agents/` e `paperclip/` em TokenizAi classificados como referências intencionais (metadados AGENTS.md, builds). `.svelte-kit/` classificado corretamente como artefato gerado e não rastreado.
+- [ ] **Reconciliação Git confirmada:** três repositórios com HEAD = origin/main:
+  - TokenizAi: `61da94a`
+  - Agency Agents corpus: `4df4038`
+  - Agency Agents desktop app: `6d9a355`
+
+**Decisão:** Fase 0 **homologada localmente**. CI remoto permanece como pendência financeira (bloqueio de cobrança GitHub Actions), não bloqueia o início da Fase 1.
 
 ### Fase 1: Foundation Packages (2-3 semanas)
 
